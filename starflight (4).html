@@ -66,7 +66,6 @@ notas que algo falte?
   const cloudOverlay = new Image();
   cloudOverlay.src = 'cloud.png';
   // cloudOverlay.src = 'cloud_overlay.png';
-  let cloudOffset = 0;
   const cloudSpeed  = 0.5;
 
   let frameCounter = 0;
@@ -211,21 +210,18 @@ notas que algo falte?
     // ——— capa de nubes desplazándose horizontalmente y recortada ———
     if (cloudOverlay.complete) {
       ctx.save();
-
-      // 1) define el círculo de clipping igual al de la Tierra
       ctx.beginPath();
       ctx.arc(cx, cy, boxSize / 2, 0, Math.PI * 2);
       ctx.clip();
 
-      // 2) dibuja las nubes con offset, igual que antes
       ctx.globalAlpha = 0.6;
-      const offset = cloudOffset % boxSize;
-      const x0 = dx - offset;
+      // Sincroniza el offset de las nubes con el frame de la Tierra:
+      const offset = (earthFrameIndex / totalEarthFrames) * boxSize;
+      const x0 = dx + offset;
       const y0 = dy;
-      ctx.drawImage(cloudOverlay, x0,           y0, boxSize, boxSize);
-      ctx.drawImage(cloudOverlay, x0 + boxSize, y0, boxSize, boxSize);
+      ctx.drawImage(cloudOverlay, x0,    y0, boxSize, boxSize);
+      ctx.drawImage(cloudOverlay, x0 - boxSize, y0, boxSize, boxSize);
 
-      // 3) restaura sin clipping para no afectar lo siguiente
       ctx.restore();
     }
 
@@ -315,9 +311,6 @@ notas que algo falte?
     let prog = (elapsed - earthAppearTime) / earthDuration;
     prog = Math.min(Math.max(prog, 0), 1);
     if (prog > 0) drawEarthAnimation(prog);
-
-    // actualizar offset de nubes **una vez por frame**
-    cloudOffset += cloudSpeed;
 
     // cronómetro
     ctx.fillStyle = '#FFF';
