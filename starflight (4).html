@@ -2,41 +2,41 @@ notas que algo falte?
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Viaje espacial a la Tierra</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background-color: #000; /* fondo oscuro para el espacio */
-      overflow: hidden;
-    }
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Viaje espacial a la Tierra</title>
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            background-color: #000; /* fondo oscuro para el espacio */
+            overflow: hidden;
+        }
 
-    /* El canvas ocupa toda la ventana y forzamos pixel art */
-    #viaje {
-      display: block;
-      width: 100%;
-      height: 100%;
-      image-rendering: crisp-edges;
-      image-rendering: pixelated;
-    }
-  </style>
+        /* El canvas ocupa toda la ventana y forzamos pixel art */
+        #viaje {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
+    </style>
 </head>
 <body>
 <canvas id="viaje"></canvas>
 <script>
-  // Este script implementa un viaje espacial en primera persona con estrellas,
-  // un sol fijo y una animación de la Tierra en pixel art.
-  const canvas = document.getElementById('viaje');
-  const ctx = canvas.getContext('2d');
+    // Este script implementa un viaje espacial en primera persona con estrellas,
+    // un sol fijo y una animación de la Tierra en pixel art.
+    const canvas = document.getElementById('viaje');
+    const ctx = canvas.getContext('2d');
 
-  // ————————————————
-  // Variables globales y configuración inicial
-  let stars = [];             // estrellas con paralaje
-  let backgroundStars = [];   // estrellas estáticas de fondo
-  const sunRelativePos = {x: 0.2, y: 0.3};
-  let sun = {x: 0, y: 0, size: 0};
+    // ————————————————
+    // Variables globales y configuración inicial
+    let stars = [];             // estrellas con paralaje
+    let backgroundStars = [];   // estrellas estáticas de fondo
+    const sunRelativePos = {x: 0.2, y: 0.3};
+    let sun = {x: 0, y: 0, size: 0};
 
   const initialSpeed = 20;    // velocidad inicial
   const minSpeed = 0.5;       // velocidad mínima
@@ -48,96 +48,106 @@ notas que algo falte?
   const startTime = performance.now();
   let shipSpeed = initialSpeed;
 
-  // Parámetros de la sprite-sheet (igual que en archivo1):
-  const earthSprite = new Image();
-  earthSprite.src = 'https://opengameart.org/sites/default/files/earthspin-sheet.png';
-  let earthLoaded = false;
-  earthSprite.onload = () => {
-    earthLoaded = true;
-  };
-  if (earthSprite.complete && earthSprite.naturalWidth > 0) {
-    earthLoaded = true;
-  }
-  const earthCols = 10;          // número de columnas en la hoja
-  const totalEarthFrames = 94;   // fotogramas que tiene la animación
-  let earthFrameSize;            // se calcula al cargar la imagen
-  let earthFrameIndex = 0;
-
-  const cloudOverlay = new Image();
-  cloudOverlay.src = 'cloud.png';
-  // cloudOverlay.src = 'cloud_overlay.png';
-  const cloudSpeed  = 0.5;
-
-  let frameCounter = 0;
-  const framesPerEarthUpdate = 12; // regula velocidad de rotación
-
-  let moonAngle = 0;
-
-  // Calcular tamaño real de cada cuadro
-  earthSprite.onload = () => {
-    if (earthSprite.naturalWidth > 0) {
-      earthLoaded = true;
-      earthFrameSize = earthSprite.naturalWidth / earthCols;
+    // Parámetros de la sprite-sheet (igual que en archivo1):
+    const earthSprite = new Image();
+    earthSprite.src = 'https://opengameart.org/sites/default/files/earthspin-sheet.png';
+    let earthLoaded = false;
+    earthSprite.onload = () => {
+        earthLoaded = true;
+    };
+    if (earthSprite.complete && earthSprite.naturalWidth > 0) {
+        earthLoaded = true;
     }
-  };
+    const earthCols = 10;          // número de columnas en la hoja
+    const totalEarthFrames = 94;   // fotogramas que tiene la animación
+    let earthFrameSize;            // se calcula al cargar la imagen
+    let earthFrameIndex = 0;
 
-  // ————————————————
-  // Canvas resize y creación de estrellas
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    updateSun();
-    createBackgroundStars();
-    createStars();
-  }
+    let moonFrameIndex = 0;
+    const totalMoonFrames = 60;   // controla la velocidad aparente de rotación
 
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
+    let frameCounter = 0;
+    const framesPerEarthUpdate = 12; // regula velocidad de rotación
 
-  function createStars() {
-    const numStars = 500;
-    stars = [];
-    for (let i = 0; i < numStars; i++) {
-      stars.push({
-        x: (Math.random() * 2 - 1) * canvas.width * 0.35,
-        y: (Math.random() * 2 - 1) * canvas.height * 0.35,
-        z: Math.random() * canvas.width,
-        speedFactor: 0.3 + Math.random() * 0.7
-      });
+    let moonFrameCounter = 0;
+    const framesPerMoonUpdate = 65;
+
+    let moonAngle = 0;
+
+    const cloudOverlay = new Image();
+    cloudOverlay.src = 'cloud.png';
+
+    const cloudOverlayInverted = new Image();
+    cloudOverlayInverted.src = 'cloud2.png';
+
+    const moonOverlay = new Image();
+    moonOverlay.src = 'moon.png';
+
+    // Calcular tamaño real de cada cuadro
+    earthSprite.onload = () => {
+        if (earthSprite.naturalWidth > 0) {
+            earthLoaded = true;
+            earthFrameSize = earthSprite.naturalWidth / earthCols;
+        }
+    };
+
+    // ————————————————
+    // Canvas resize y creación de estrellas
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        updateSun();
+        createBackgroundStars();
+        createStars();
     }
-  }
 
-  function createBackgroundStars() {
-    const total = 200;
-    backgroundStars = [];
-    for (let i = 0; i < total; i++) {
-      backgroundStars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 1.5 + 0.3,
-        brightness: Math.random() * 0.6 + 0.4
-      });
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function createStars() {
+        const numStars = 500;
+        stars = [];
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: (Math.random() * 2 - 1) * canvas.width * 0.35,
+                y: (Math.random() * 2 - 1) * canvas.height * 0.35,
+                z: Math.random() * canvas.width,
+                speedFactor: 0.3 + Math.random() * 0.7
+            });
+        }
     }
-  }
 
-  function updateSun() {
-    const minDim = Math.min(canvas.width, canvas.height);
-    sun.x = sunRelativePos.x * canvas.width;
-    sun.y = sunRelativePos.y * canvas.height;
-    sun.size = minDim * 0.03;
-  }
+    function createBackgroundStars() {
+        const total = 200;
+        backgroundStars = [];
+        for (let i = 0; i < total; i++) {
+            backgroundStars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5 + 0.3,
+                brightness: Math.random() * 0.6 + 0.4
+            });
+        }
+    }
 
-  // ————————————————
-  // Funciones de dibujo
-  function drawSun() {
-    ctx.beginPath();
-    ctx.arc(sun.x, sun.y, sun.size, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, sun.size);
-    grad.addColorStop(0, 'rgba(255,230,150,1)');
-    grad.addColorStop(1, 'rgba(255,200,50,0)');
-    ctx.fillStyle = grad;
-    ctx.fill();
-  }
+    function updateSun() {
+        const minDim = Math.min(canvas.width, canvas.height);
+        sun.x = sunRelativePos.x * canvas.width;
+        sun.y = sunRelativePos.y * canvas.height;
+        sun.size = minDim * 0.03;
+    }
+
+    // ————————————————
+    // Funciones de dibujo
+    function drawSun() {
+        ctx.beginPath();
+        ctx.arc(sun.x, sun.y, sun.size, 0, Math.PI * 2);
+        const grad = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, sun.size);
+        grad.addColorStop(0, 'rgba(255,230,150,1)');
+        grad.addColorStop(1, 'rgba(255,200,50,0)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+    }
 
   function drawStar(px, py, size) {
     ctx.beginPath();
@@ -146,59 +156,58 @@ notas que algo falte?
     ctx.fill();
   }
 
-  function drawEarthAnimation(progress) {
-    if (!earthLoaded) return;
+    function drawEarthAnimation(progress) {
+        if (!earthLoaded) return;
 
-    // pixel art → desactivar smoothing
-    ctx.imageSmoothingEnabled = false;
-    ctx.imageSmoothingQuality = 'low';
+        // pixel art → desactivar smoothing
+        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingQuality = 'low';
 
-    // calcular frame origen
-    const col = earthFrameIndex % earthCols;
-    const row = Math.floor(earthFrameIndex / earthCols);
-    const sx = col * earthFrameSize;
-    const sy = row * earthFrameSize;
+        // calcular frame origen
+        const col = earthFrameIndex % earthCols;
+        const row = Math.floor(earthFrameIndex / earthCols);
+        const sx = col * earthFrameSize;
+        const sy = row * earthFrameSize;
 
-    // tamaño destino con easing
-    // const minSize = Math.min(canvas.width, canvas.height) / 10;
-    const minSize = 0;
-    const maxSize = Math.min(canvas.width, canvas.height) / 3;
-    // const eased = Math.pow(progress, 2);
-    const eased = Math.pow(progress, 3);
-    const boxSize = minSize + (maxSize - minSize) * eased;
-    const dx = (canvas.width - boxSize) / 2;
-    const dy = (canvas.height - boxSize) / 2;
-    const cx = dx + boxSize / 2;
-    const cy = dy + boxSize / 2;
+        // tamaño destino con easing
+        // const minSize = Math.min(canvas.width, canvas.height) / 10;
+        const minSize = 0;
+        const maxSize = Math.min(canvas.width, canvas.height) / 3;
+        // const eased = Math.pow(progress, 2);
+        const eased = Math.pow(progress, 3);
+        const boxSize = minSize + (maxSize - minSize) * eased;
+        const dx = (canvas.width - boxSize) / 2;
+        const dy = (canvas.height - boxSize) / 2;
+        const cx = dx + boxSize / 2;
+        const cy = dy + boxSize / 2;
 
-    // luna en órbita
-    const orbit = boxSize * 0.8;
-    const moonSz = boxSize * 0.15;
-    const xOff = Math.sin(moonAngle) * orbit;
-    const yOff = Math.cos(moonAngle) * orbit * 0.3;
-    const depth = Math.cos(moonAngle);
-    const moonX = cx + xOff;
-    const moonY = cy + yOff;
-    const behind = depth < 0;
+        // luna en órbita
+        const orbit = boxSize * 0.8;
+        const moonSz = boxSize * 0.15;
+        const xOff = Math.sin(moonAngle) * orbit;
+        const yOff = Math.cos(moonAngle) * orbit * 0.3;
+        const depth = Math.cos(moonAngle);
+        const moonX = cx + xOff;
+        const moonY = cy + yOff;
+        const behind = depth < 0;
 
-    // avanzar frame de la Tierra
-    frameCounter++;
-    if (frameCounter >= framesPerEarthUpdate) {
-      frameCounter = 0;
-      earthFrameIndex = (earthFrameIndex + 1) % totalEarthFrames;
-    }
+        // avanzar frame de la Tierra
+        frameCounter++;
+        if (frameCounter >= framesPerEarthUpdate) {
+            frameCounter = 0;
+            earthFrameIndex = (earthFrameIndex + 1) % totalEarthFrames;
+        }
 
-    // dibujar luna detrás o delante
-    if (behind) {
-      // luna atrás
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonSz / 2, 0, Math.PI * 2);
-      ctx.fillStyle = '#666';
-      ctx.fill();
-      ctx.strokeStyle = '#444';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
+        moonFrameCounter++;
+        if (moonFrameCounter >= framesPerMoonUpdate) {
+            moonFrameCounter = 0;
+            moonFrameIndex = (moonFrameIndex + 1) % totalMoonFrames;
+        }
+
+        // dibujar luna detrás o delante
+        if (behind) {
+            drawMoonOverlay(ctx, moonOverlay, moonX, moonY, moonSz, moonFrameIndex, totalMoonFrames, 0.8);
+        }
 
     // dibujar Tierra
     ctx.drawImage(
@@ -225,110 +234,104 @@ notas que algo falte?
       ctx.restore();
     }
 
-    if (!behind) {
-      // luna adelante
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonSz / 2, 0, Math.PI * 2);
-      ctx.fillStyle = '#CCC';
-      ctx.fill();
-      ctx.strokeStyle = '#888';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    moonAngle += 0.0025;
-  }
-
-  function generateCloudPixels() {
-    const numCloudPixels = 80;
-    cloudPixels = [];
-    for (let i = 0; i < numCloudPixels; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 0.45 * (0.3 + Math.random() * 0.7);
-      const px = Math.cos(angle) * radius;
-      const py = Math.sin(angle) * radius * 0.6;
-      const alpha = 0.4 + Math.random() * 0.6;
-      cloudPixels.push({x: px, y: py, alpha});
-    }
-  }
-  generateCloudPixels();
-
-
-  // ————————————————
-  // Bucle principal
-  function animate() {
-    // fondo negro
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // fondo de estrellas + sol
-    backgroundStars.forEach(s => {
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-      const v = Math.floor(255 * s.brightness);
-      ctx.fillStyle = `rgb(${v},${v},${v})`;
-      ctx.fill();
-    });
-    drawSun();
-
-    // tiempo
-    const now = performance.now();
-    const elapsed = now - startTime;
-
-    // velocidad → desaceleración
-    const midSp = initialSpeed * 0.25;
-    if (elapsed <= earthAppearTime) {
-      const t = elapsed / earthAppearTime;
-      shipSpeed = initialSpeed - (initialSpeed - midSp) * t;
-    } else {
-      const t2 = (elapsed - earthAppearTime) / earthDuration;
-      shipSpeed = midSp - (midSp - minSpeed) * Math.min(t2, 1);
-    }
-
-    // actualizar estrellas
-    const focal = canvas.width, maxD = canvas.width;
-    stars.forEach(star => {
-      star.z -= shipSpeed * star.speedFactor;
-      if (star.z <= 0) {
-        if (elapsed < stopSpawnTime) {
-          star.x = (Math.random() * 2 - 1) * canvas.width * 0.35;
-          star.y = (Math.random() * 2 - 1) * canvas.height * 0.35;
-          star.z = maxD;
-        } else {
-          star.z = 0;
+        if (!behind) {
+            drawMoonOverlay(ctx, moonOverlay, moonX, moonY, moonSz, moonFrameIndex, totalMoonFrames, 1.0);
         }
-      }
-      const k = focal / star.z;
-      const px = star.x * k + canvas.width / 2;
-      const py = star.y * k + canvas.height / 2;
-      const sz = Math.max(1, (1 - star.z / maxD) * 3);
-      if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
-        drawStar(px, py, sz);
-      }
-    });
 
-    // aparición de la Tierra
-    let prog = (elapsed - earthAppearTime) / earthDuration;
-    prog = Math.min(Math.max(prog, 0), 1);
-    if (prog > 0) drawEarthAnimation(prog);
+        moonAngle += 0.0025;
+    }
 
-    // cronómetro
-    ctx.fillStyle = '#FFF';
-    ctx.font = '16px monospace';
-    const secs = Math.floor(elapsed / 1000);
-    const mins = Math.floor(secs / 60);
-    const rsec = secs % 60;
-    const totSec = Math.floor(journeyDuration / 1000);
-    const totMin = Math.floor(totSec / 60);
-    const rTotSec = totSec % 60;
-    const fmt = n => n < 10 ? '0' + n : '' + n;
-    ctx.fillText(`${fmt(mins)}:${fmt(rsec)} / ${fmt(totMin)}:${fmt(rTotSec)}`, 10, 25);
+    function generateCloudPixels() {
+        const numCloudPixels = 80;
+        cloudPixels = [];
+        for (let i = 0; i < numCloudPixels; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 0.45 * (0.3 + Math.random() * 0.7);
+            const px = Math.cos(angle) * radius;
+            const py = Math.sin(angle) * radius * 0.6;
+            const alpha = 0.4 + Math.random() * 0.6;
+            cloudPixels.push({x: px, y: py, alpha});
+        }
+    }
+
+    generateCloudPixels();
+
+
+    // ————————————————
+    // Bucle principal
+    function animate() {
+        // fondo negro
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // fondo de estrellas + sol
+        backgroundStars.forEach(s => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            const v = Math.floor(255 * s.brightness);
+            ctx.fillStyle = `rgb(${v},${v},${v})`;
+            ctx.fill();
+        });
+        drawSun();
+
+        // tiempo
+        const now = performance.now();
+        const elapsed = now - startTime;
+
+        // velocidad → desaceleración
+        const midSp = initialSpeed * 0.25;
+        if (elapsed <= earthAppearTime) {
+            const t = elapsed / earthAppearTime;
+            shipSpeed = initialSpeed - (initialSpeed - midSp) * t;
+        } else {
+            const t2 = (elapsed - earthAppearTime) / earthDuration;
+            shipSpeed = midSp - (midSp - minSpeed) * Math.min(t2, 1);
+        }
+
+        // actualizar estrellas
+        const focal = canvas.width, maxD = canvas.width;
+        stars.forEach(star => {
+            star.z -= shipSpeed * star.speedFactor;
+            if (star.z <= 0) {
+                if (elapsed < stopSpawnTime) {
+                    star.x = (Math.random() * 2 - 1) * canvas.width * 0.35;
+                    star.y = (Math.random() * 2 - 1) * canvas.height * 0.35;
+                    star.z = maxD;
+                } else {
+                    star.z = 0;
+                }
+            }
+            const k = focal / star.z;
+            const px = star.x * k + canvas.width / 2;
+            const py = star.y * k + canvas.height / 2;
+            const sz = Math.max(1, (1 - star.z / maxD) * 3);
+            if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                drawStar(px, py, sz);
+            }
+        });
+
+        // aparición de la Tierra
+        let prog = (elapsed - earthAppearTime) / earthDuration;
+        prog = Math.min(Math.max(prog, 0), 1);
+        if (prog > 0) drawEarthAnimation(prog);
+
+        // cronómetro
+        ctx.fillStyle = '#FFF';
+        ctx.font = '16px monospace';
+        const secs = Math.floor(elapsed / 1000);
+        const mins = Math.floor(secs / 60);
+        const rsec = secs % 60;
+        const totSec = Math.floor(journeyDuration / 1000);
+        const totMin = Math.floor(totSec / 60);
+        const rTotSec = totSec % 60;
+        const fmt = n => n < 10 ? '0' + n : '' + n;
+        ctx.fillText(`${fmt(mins)}:${fmt(rsec)} / ${fmt(totMin)}:${fmt(rTotSec)}`, 10, 25);
 
     requestAnimationFrame(animate);
 
   }
 
-  animate();
+    animate();
 </script>
 </body>
 </html>
