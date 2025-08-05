@@ -15,7 +15,7 @@ export class AssetManager {
     
     loadAssets() {
         // Cargar sprite de la Tierra
-        this.earthSprite.src = 'https://opengameart.org/sites/default/files/earthspin-sheet.png';
+        this.earthSprite.src = 'assets/earth.png';
         this.earthSprite.onload = () => {
             this.earthLoaded = true;
             if (this.earthSprite.naturalWidth > 0) {
