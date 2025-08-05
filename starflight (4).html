@@ -1,4 +1,3 @@
-notas que algo falte?
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -38,15 +37,15 @@ notas que algo falte?
     const sunRelativePos = {x: 0.2, y: 0.3};
     let sun = {x: 0, y: 0, size: 0};
 
-  const initialSpeed = 20;    // velocidad inicial
-  const minSpeed = 0.5;       // velocidad mínima
-  const journeyMinutes = 0.5; // duración total en minutos
-  const journeyDuration = journeyMinutes * 60 * 1000;
-  const earthAppearTime = journeyDuration / 2;
-  const earthDuration = journeyDuration - earthAppearTime;
-  const stopSpawnTime = earthAppearTime - 10000;
-  const startTime = performance.now();
-  let shipSpeed = initialSpeed;
+    const initialSpeed = 20;    // velocidad inicial
+    const minSpeed = 0.5;       // velocidad mínima
+    const journeyMinutes = 0.2; // duración total en minutos
+    const journeyDuration = journeyMinutes * 60 * 1000;
+    const earthAppearTime = journeyDuration / 2;
+    const earthDuration = journeyDuration - earthAppearTime;
+    const stopSpawnTime = earthAppearTime - 10000;
+    const startTime = performance.now();
+    let shipSpeed = initialSpeed;
 
     // Parámetros de la sprite-sheet (igual que en archivo1):
     const earthSprite = new Image();
@@ -149,12 +148,102 @@ notas que algo falte?
         ctx.fill();
     }
 
-  function drawStar(px, py, size) {
-    ctx.beginPath();
-    ctx.arc(px, py, size, 0, Math.PI * 2);
-    ctx.fillStyle = '#FFF';
-    ctx.fill();
-  }
+    function drawStar(px, py, size) {
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFF';
+        ctx.fill();
+    }
+
+    /**
+     * Dibuja una capa de nubes rectangular con wrap y control de inversión por flag.
+     *
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {HTMLImageElement} img
+     * @param {number} cx
+     * @param {number} cy
+     * @param {number} boxSize
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} earthFrameIndex
+     * @param {number} totalEarthFrames
+     * @param {number} alpha     – Opacidad (0..1)
+     * @param {boolean} invert   – Si true, invierte el sentido del desplazamiento
+     * @param {number} initShift – (opcional) desfase inicial en px sobre el ancho
+     */
+    function drawCloudLayer(ctx, img, cx, cy, boxSize, dx, dy,
+                            earthFrameIndex, totalEarthFrames,
+                            alpha, invert,
+                            initShift = 0) {
+        if (!img.complete) return;
+        ctx.save();
+
+        // 1) recorte circular alrededor de la Tierra
+        ctx.beginPath();
+        ctx.arc(cx, cy, boxSize/1.98, 0, Math.PI*2);
+        ctx.clip();
+
+        // 2) opacidad
+        ctx.globalAlpha = alpha;
+
+        // 3) calcular dimensiones escaladas de la capa de nubes
+        const scale     = boxSize / img.naturalHeight;
+        const overlayW  = img.naturalWidth * scale;
+        const overlayH  = boxSize;
+
+        // 4) origen X para centrar la capa sobre la Tierra
+        const xOrigin = dx - (overlayW - boxSize)/2;
+        const yOrigin = dy;
+
+        // 5) desplazamiento animado + inicial, con wrap sobre overlayW
+        const baseShift   = (earthFrameIndex / totalEarthFrames) * overlayW;
+        let totalOffset   = (baseShift + initShift) % overlayW;
+        if (totalOffset < 0) totalOffset += overlayW;
+
+        // 6) invertir sentido del offset según flag
+        const signedOffset = invert ? -totalOffset : +totalOffset;
+
+        // 7) calcular dos X para cubrir wrap
+        const x1 = xOrigin + signedOffset;
+        const x2 = invert ? x1 + overlayW : x1 - overlayW;
+
+        // 8) dibujar ambas repeticiones
+        ctx.drawImage(img, x1, yOrigin,       overlayW, overlayH);
+        ctx.drawImage(img, x2, yOrigin,       overlayW, overlayH);
+
+        ctx.restore();
+    }
+
+    function drawMoonOverlay(ctx, img, cx, cy, moonSize, frameIndex, totalFrames, alpha) {
+        if (!img.complete) return;
+        ctx.save();
+
+        // recorte circular de la luna
+        ctx.beginPath();
+        ctx.arc(cx, cy, moonSize / 2, 0, Math.PI * 2);
+        ctx.clip();
+
+        ctx.globalAlpha = alpha;
+
+        // calcular escala del sprite rectangular a la altura de la luna
+        const scale = moonSize / img.naturalHeight;
+        const overlayW = img.naturalWidth * scale;
+        const overlayH = moonSize;
+
+        // centrar sobre la luna
+        const xOrigin = cx - overlayW / 2;
+        const yOrigin = cy - overlayH / 2;
+
+        // offset animado
+        const baseShift = (Math.floor(frameIndex) / totalFrames) * overlayW;
+        const totalOffset = baseShift % overlayW;
+
+        // dibujar dos repeticiones para wrap
+        ctx.drawImage(img, xOrigin + totalOffset, yOrigin, overlayW, overlayH);
+        ctx.drawImage(img, xOrigin + totalOffset - overlayW, yOrigin, overlayW, overlayH);
+
+        ctx.restore();
+    }
 
     function drawEarthAnimation(progress) {
         if (!earthLoaded) return;
@@ -209,30 +298,36 @@ notas que algo falte?
             drawMoonOverlay(ctx, moonOverlay, moonX, moonY, moonSz, moonFrameIndex, totalMoonFrames, 0.8);
         }
 
-    // dibujar Tierra
-    ctx.drawImage(
-            earthSprite,
-            sx, sy, earthFrameSize, earthFrameSize,
-            dx, dy, boxSize, boxSize
-    );
+        // ——— Capa de nubes TRASERAS (detrás de la Tierra) ———
+        if (cloudOverlayInverted.complete) {
+            drawCloudLayer(
+                ctx, cloudOverlayInverted,
+                cx, cy, boxSize, dx, dy,
+                earthFrameIndex, totalEarthFrames,
+                0.7,    // alpha
+                true    // invert
+            );
+        }
 
-    // ——— capa de nubes desplazándose horizontalmente y recortada ———
-    if (cloudOverlay.complete) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, boxSize / 2, 0, Math.PI * 2);
-      ctx.clip();
 
-      ctx.globalAlpha = 0.6;
-      // Sincroniza el offset de las nubes con el frame de la Tierra:
-      const offset = (earthFrameIndex / totalEarthFrames) * boxSize;
-      const x0 = dx + offset;
-      const y0 = dy;
-      ctx.drawImage(cloudOverlay, x0,    y0, boxSize, boxSize);
-      ctx.drawImage(cloudOverlay, x0 - boxSize, y0, boxSize, boxSize);
+        // dibujar Tierra
+        ctx.drawImage(
+                earthSprite,
+                sx, sy, earthFrameSize, earthFrameSize,
+                dx, dy, boxSize, boxSize
+        );
 
-      ctx.restore();
-    }
+
+        // ——— Capa de nubes FRONTALES ———
+        if (cloudOverlay.complete) {
+            drawCloudLayer(
+                ctx, cloudOverlay,
+                cx, cy, boxSize, dx, dy,
+                earthFrameIndex, totalEarthFrames,
+                0.8,    // alpha
+                false   // no invert
+            );
+        }
 
         if (!behind) {
             drawMoonOverlay(ctx, moonOverlay, moonX, moonY, moonSz, moonFrameIndex, totalMoonFrames, 1.0);
@@ -327,9 +422,8 @@ notas que algo falte?
         const fmt = n => n < 10 ? '0' + n : '' + n;
         ctx.fillText(`${fmt(mins)}:${fmt(rsec)} / ${fmt(totMin)}:${fmt(rTotSec)}`, 10, 25);
 
-    requestAnimationFrame(animate);
-
-  }
+        requestAnimationFrame(animate);
+    }
 
     animate();
 </script>
