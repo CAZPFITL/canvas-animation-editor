@@ -1,93 +1,119 @@
-
 // Módulo principal del juego
-import { CONFIG } from './assets/scripts/config.js';
-import { AssetManager } from './assets/scripts/assets.js';
-import { StarManager } from './assets/scripts/stars.js';
-import { Sun } from './assets/scripts/sun.js';
-import { EarthSystem } from './assets/scripts/earth.js';
-import { UI } from './assets/scripts/ui.js';
+import {CONFIG} from './assets/scripts/config.js';
+import {AssetManager} from './assets/scripts/assets.js';
+import {Stars} from './assets/scripts/stars.js';
+import {Sun} from './assets/scripts/sun.js';
+import {Earth} from './assets/scripts/earth.js';
+import {UI} from './assets/scripts/ui.js';
+import {Moon} from "./assets/scripts/moon.js";
+import {Clouds} from "./assets/scripts/clouds.js";
 
 class SpaceJourneyGame {
     constructor() {
         this.canvas = document.getElementById('viaje');
         this.ctx = this.canvas.getContext('2d');
-        
-        // Inicializar sistemas
+        this.config = CONFIG
+
         this.assetManager = new AssetManager();
-        this.starManager = new StarManager(this.canvas);
-        this.sun = new Sun(this.canvas, CONFIG.sunRelativePos);
-        this.earthSystem = new EarthSystem(this.canvas, this.assetManager);
+        this.stars = new Stars(this);
+        this.sun = new Sun(this);
+        this.moon = new Moon(this);
+        this.earth = new Earth(this);
+        this.clouds = new Clouds(this);
         this.ui = new UI(this.canvas);
-        
-        // Variables de tiempo y velocidad
+
         this.startTime = performance.now();
         this.shipSpeed = CONFIG.initialSpeed;
-        
-        // Configurar canvas y eventos
+
         this.setupCanvas();
         this.setupEvents();
-        
-        // Iniciar animación
+
         this.animate();
     }
-    
+
     setupCanvas() {
         this.resizeCanvas();
     }
-    
+
     setupEvents() {
         window.addEventListener('resize', () => this.resizeCanvas());
     }
-    
+
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.sun.onResize();
-        this.starManager.onResize();
+        this.stars.onResize();
     }
-    
-    updateShipSpeed(elapsed) {
+
+    updateElapsedTime() {
+        const now = performance.now();
+        this.elapsed = now - this.startTime;
+    }
+
+    updateShipSpeed() {
         const midSp = CONFIG.initialSpeed * 0.25;
-        if (elapsed <= CONFIG.earthAppearTime) {
-            const t = elapsed / CONFIG.earthAppearTime;
+        if (this.elapsed <= CONFIG.earthAppearTime) {
+            const t = this.elapsed / CONFIG.earthAppearTime;
             this.shipSpeed = CONFIG.initialSpeed - (CONFIG.initialSpeed - midSp) * t;
         } else {
-            const t2 = (elapsed - CONFIG.earthAppearTime) / CONFIG.earthDuration;
+            const t2 = (this.elapsed - CONFIG.earthAppearTime) / CONFIG.earthDuration;
             this.shipSpeed = midSp - (midSp - CONFIG.minSpeed) * Math.min(t2, 1);
         }
     }
-    
-    animate() {
-        // Fondo negro
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Tiempo transcurrido
-        const now = performance.now();
-        const elapsed = now - this.startTime;
+    updateProgress() {
+        const progress = (this.elapsed - CONFIG.earthAppearTime) / CONFIG.earthDuration;
+        this.progress = Math.min(Math.max(progress, 0), 1);
+    }
 
-        // Actualizar velocidad de la nave
-        this.updateShipSpeed(elapsed);
+    updateTargetSize() {
+        this.eased = Math.pow(this.progress, 3);
+        this.maxSize = Math.min(this.canvas.width, this.canvas.height) / 3;
+        this.boxSize = this.maxSize * this.eased;
+        this.dx = (this.canvas.width - this.boxSize) / 2;
+        this.dy = (this.canvas.height - this.boxSize) / 2;
+        this.cx = this.dx + this.boxSize / 2;
+        this.cy = this.dy + this.boxSize / 2;
+    }
 
-        // Dibujar elementos de fondo
-        this.starManager.drawBackgroundStars(this.ctx);
+    drawBackground(ctx) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+
+    update() {
+        this.updateElapsedTime();
+        this.updateShipSpeed();
+        this.updateProgress();
+        this.updateTargetSize();
+        this.stars.update();
+        this.earth.update();
+        this.moon.update();
+        this.clouds.update();
+    }
+
+    draw() {
+        this.drawBackground(this.ctx);
+        this.stars.draw(this.ctx);
         this.sun.draw(this.ctx);
+        this.stars.draw(this.ctx, true);
 
-        // Actualizar y dibujar estrellas en movimiento
-        this.starManager.updateStars(this.shipSpeed, elapsed, CONFIG.stopSpawnTime);
-        this.starManager.drawStars(this.ctx);
-
-        // Aparición de la Tierra
-        let progress = (elapsed - CONFIG.earthAppearTime) / CONFIG.earthDuration;
-        progress = Math.min(Math.max(progress, 0), 1);
-        if (progress > 0) {
-            this.earthSystem.drawEarthAnimation(this.ctx, progress);
+        if (this.progress > 0) {
+            this.moon.draw(this.ctx, true);
+            this.clouds.draw(this.ctx, true);
+            this.earth.draw(this.ctx);
+            this.clouds.draw(this.ctx, false);
+            this.moon.draw(this.ctx, false);
         }
 
-        // Dibujar UI
-        this.ui.drawTimer(this.ctx, elapsed, CONFIG.journeyDuration);
+        this.ui.drawTimer(this.ctx, this.elapsed, CONFIG.journeyDuration);
+    }
 
-        // Continuar animación
+    animate() {
+        this.update()
+        this.draw()
         requestAnimationFrame(() => this.animate());
     }
 }

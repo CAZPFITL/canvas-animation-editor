@@ -1,74 +1,53 @@
-
-// Gestión de la Tierra
-import { CONFIG } from './config.js';
-import { Moon } from './moon.js';
-import { Clouds } from './clouds.js';
-
-export class EarthSystem {
-    constructor(canvas, assetManager) {
-        this.canvas = canvas;
-        this.assetManager = assetManager;
-        
-        // Inicializar subsistemas
-        this.moon = new Moon(assetManager);
-        this.clouds = new Clouds(assetManager);
-        
-        // Contadores de frames para la Tierra
+export class Earth {
+    constructor(game) {
+        this.game = game;
         this.earthFrameIndex = 0;
         this.frameCounter = 0;
     }
-    
-    drawEarthAnimation(ctx, progress) {
-        if (!this.assetManager.isEarthLoaded()) return;
 
-        // Pixel art → desactivar smoothing
-        ctx.imageSmoothingEnabled = false;
-        ctx.imageSmoothingQuality = 'low';
+    draw(ctx) {
+        const earthImg = this.game.assetManager.getEarthSprite();
+        if (earthImg.complete) {
+            ctx.save();
 
-        // Calcular frame origen
-        const col = this.earthFrameIndex % CONFIG.earthCols;
-        const row = Math.floor(this.earthFrameIndex / CONFIG.earthCols);
-        const earthFrameSize = this.assetManager.getEarthFrameSize();
-        const sx = col * earthFrameSize;
-        const sy = row * earthFrameSize;
+            ctx.imageSmoothingEnabled = false;
+            ctx.imageSmoothingQuality = 'low';
 
-        // Tamaño destino con easing
-        const minSize = 0;
-        const maxSize = Math.min(this.canvas.width, this.canvas.height) / 3;
-        const eased = Math.pow(progress, 3);
-        const boxSize = minSize + (maxSize - minSize) * eased;
-        const dx = (this.canvas.width - boxSize) / 2;
-        const dy = (this.canvas.height - boxSize) / 2;
-        const cx = dx + boxSize / 2;
-        const cy = dy + boxSize / 2;
+            // clip circular
+            ctx.beginPath();
+            ctx.arc(this.game.cx, this.game.cy, this.game.boxSize / 2, 0, Math.PI * 2);
+            ctx.clip();
 
-        // Avanzar frame de la Tierra
-        this.frameCounter++;
-        if (this.frameCounter >= CONFIG.framesPerEarthUpdate) {
-            this.frameCounter = 0;
-            this.earthFrameIndex = (this.earthFrameIndex + 1) % CONFIG.totalEarthFrames;
+            // escala para altura = boxSize
+            const scale = this.game.boxSize / earthImg.naturalHeight;
+            const overlayW = earthImg.naturalWidth * scale;
+            const overlayH = this.game.boxSize;
+
+            // origen centrado
+            const xOrigin = this.game.cx - overlayW / 2;
+            const yOrigin = this.game.cy - overlayH / 2;
+
+            // offset animado hacia la derecha + wrap
+            let totalOffset = (this.earthFrameIndex / this.game.config.totalEarthFrames) * overlayW;
+            totalOffset = totalOffset % overlayW;
+            if (totalOffset < 0) totalOffset += overlayW;
+
+            // dos repeticiones
+            const x1 = xOrigin + totalOffset;
+            const x2 = x1 - overlayW;
+
+            ctx.drawImage(earthImg, x1, yOrigin, overlayW, overlayH);
+            ctx.drawImage(earthImg, x2, yOrigin, overlayW, overlayH);
+
+            ctx.restore();
         }
+    }
 
-        // Actualizar luna
-        this.moon.update();
-
-        // Dibujar luna detrás si corresponde
-        this.moon.draw(ctx, cx, cy, boxSize, true);
-
-        // Dibujar nubes traseras
-        this.clouds.drawBackClouds(ctx, cx, cy, boxSize, dx, dy, this.earthFrameIndex);
-
-        // Dibujar Tierra
-        ctx.drawImage(
-            this.assetManager.getEarthSprite(),
-            sx, sy, earthFrameSize, earthFrameSize,
-            dx, dy, boxSize, boxSize
-        );
-
-        // Dibujar nubes frontales
-        this.clouds.drawFrontClouds(ctx, cx, cy, boxSize, dx, dy, this.earthFrameIndex);
-
-        // Dibujar luna delante si corresponde
-        this.moon.draw(ctx, cx, cy, boxSize, false);
+    update() {
+        this.frameCounter++;
+        if (this.frameCounter >= this.game.config.framesPerEarthUpdate) {
+            this.frameCounter = 0;
+            this.earthFrameIndex = (this.earthFrameIndex + 1) % this.game.config.totalEarthFrames;
+        }
     }
 }

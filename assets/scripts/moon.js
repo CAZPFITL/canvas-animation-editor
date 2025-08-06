@@ -1,15 +1,11 @@
-
-// Gestión de la Luna
-import { CONFIG } from './config.js';
-
 export class Moon {
-    constructor(assetManager) {
-        this.assetManager = assetManager;
+    constructor(game) {
+        this.game = game;
         this.moonFrameIndex = 0;
         this.moonFrameCounter = 0;
         this.moonAngle = 0;
     }
-    
+
     drawMoonOverlay(ctx, img, cx, cy, moonSize, frameIndex, totalFrames, alpha) {
         if (!img.complete) return;
         ctx.save();
@@ -40,38 +36,41 @@ export class Moon {
 
         ctx.restore();
     }
-    
-    update() {
-        // Avanzar frame de la Luna
-        this.moonFrameCounter++;
-        if (this.moonFrameCounter >= CONFIG.framesPerMoonUpdate) {
-            this.moonFrameCounter = 0;
-            this.moonFrameIndex = (this.moonFrameIndex + 1) % CONFIG.totalMoonFrames;
-        }
-        
-        // Actualizar ángulo orbital
-        this.moonAngle += 0.0025;
-    }
-    
-    draw(ctx, cx, cy, boxSize, behind = false) {
-        // Luna en órbita
-        const orbit = boxSize * 0.8;
-        const moonSz = boxSize * 0.15;
+
+    draw(ctx, behind = false) {
+        const orbit = this.game.boxSize * 0.8;
+        const moonSz = this.game.boxSize * 0.15;
         const xOff = Math.sin(this.moonAngle) * orbit;
         const yOff = Math.cos(this.moonAngle) * orbit * 0.3;
         const depth = Math.cos(this.moonAngle);
-        const moonX = cx + xOff;
-        const moonY = cy + yOff;
+        const moonX = this.game.cx + xOff;
+        const moonY = this.game.cy + yOff;
         const isBehind = depth < 0;
-        
-        // Solo dibujar si coincide con la condición behind
+
         if (behind === isBehind) {
             const alpha = behind ? 0.8 : 1.0;
-            this.drawMoonOverlay(ctx, this.assetManager.getMoonOverlay(), moonX, moonY, moonSz, this.moonFrameIndex, CONFIG.totalMoonFrames, alpha);
+            this.drawMoonOverlay(
+                ctx,
+                this.game.assetManager.getMoonOverlay(),
+                moonX,
+                moonY,
+                moonSz,
+                this.moonFrameIndex,
+                this.game.config.totalMoonFrames,
+                alpha
+            );
         }
     }
-    
-    isVisible() {
-        return this.assetManager.getMoonOverlay().complete;
+
+    update() {
+        // Avanzar frame de la Luna
+        this.moonFrameCounter++;
+        if (this.moonFrameCounter >= this.game.config.framesPerMoonUpdate) {
+            this.moonFrameCounter = 0;
+            this.moonFrameIndex = (this.moonFrameIndex + 1) % this.game.config.totalMoonFrames;
+        }
+
+        // Actualizar ángulo orbital
+        this.moonAngle += 0.0025;
     }
 }
