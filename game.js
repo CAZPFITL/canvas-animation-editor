@@ -1,4 +1,3 @@
-// Módulo principal del juego
 import {CONFIG} from './assets/scripts/config.js';
 import {AssetManager} from './assets/scripts/assets.js';
 import {Stars} from './assets/scripts/stars.js';

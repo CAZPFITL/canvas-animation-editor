@@ -1,9 +1,11 @@
+import {applyLighting, applySpecularHighlight} from './utils.js';
+
 export class Moon {
     constructor(game) {
         this.game = game;
         this.moonFrameIndex = 0;
         this.moonFrameCounter = 0;
-        this.moonAngle = 0;
+        this.moonAngle = 500;
     }
 
     drawMoonOverlay(ctx, img, cx, cy, moonSize, frameIndex, totalFrames, alpha) {
@@ -59,6 +61,22 @@ export class Moon {
                 this.game.config.totalMoonFrames,
                 alpha
             );
+
+            const moonArgs = [ctx, moonX, moonY, moonSz/2];
+
+            applyLighting(...moonArgs, {
+                offsetX: 0,
+                offsetY: 0,
+                innerColor: behind ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)',
+                outerColor: 'rgba(0,0,0,0.4)'
+            });
+
+            applySpecularHighlight(...moonArgs, {
+                offsetX: -0.2,
+                offsetY: 0.2,
+                sizeFactor: 0.8,
+                color: behind ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.1)'
+            });
         }
     }
 
@@ -71,6 +89,6 @@ export class Moon {
         }
 
         // Actualizar ángulo orbital
-        this.moonAngle += 0.0025;
+        this.moonAngle += 0.001;
     }
 }

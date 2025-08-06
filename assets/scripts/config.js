@@ -13,14 +13,14 @@ export const CONFIG = {
     get stopSpawnTime() { return this.earthAppearTime - 10000; },
     
     // Parámetros de sprites
-    totalEarthFrames: 94,
-    framesPerEarthUpdate: 12,
+    totalEarthFrames: 8000,
+    framesPerEarthUpdate: 1,
 
-    totalMoonFrames: 60,
-    framesPerMoonUpdate: 65,
+    totalMoonFrames: 6000,
+    framesPerMoonUpdate: 1,
 
-    totalCloudFrames: 100,
-    framesPerCloudsUpdate: 8,
+    totalCloudFrames: 7000,
+    framesPerCloudsUpdate: 1,
 
     // Posición relativa del sol
     sunRelativePos: { x: 0.05, y: 0.5 },
