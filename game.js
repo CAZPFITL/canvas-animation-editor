@@ -1,11 +1,11 @@
 
 // Módulo principal del juego
-import { CONFIG } from './config.js';
-import { AssetManager } from './assets.js';
-import { StarManager } from './stars.js';
-import { Sun } from './sun.js';
-import { EarthSystem } from './earth.js';
-import { UI } from './ui.js';
+import { CONFIG } from './assets/scripts/config.js';
+import { AssetManager } from './assets/scripts/assets.js';
+import { StarManager } from './assets/scripts/stars.js';
+import { Sun } from './assets/scripts/sun.js';
+import { EarthSystem } from './assets/scripts/earth.js';
+import { UI } from './assets/scripts/ui.js';
 
 class SpaceJourneyGame {
     constructor() {

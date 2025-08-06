@@ -1,6 +1,11 @@
 
 // Gestión de assets (imágenes)
 export class AssetManager {
+    earthUrl = './assets/img/earthx.png'
+    cloudUrl = './assets/img/cloud.png'
+    cloudInvertedUrl = './assets/img/cloud2.png'
+    moonUrl = './assets/img/moonx.png'
+
     constructor() {
         this.earthSprite = new Image();
         this.cloudOverlay = new Image();
@@ -15,7 +20,7 @@ export class AssetManager {
     
     loadAssets() {
         // Cargar sprite de la Tierra
-        this.earthSprite.src = 'assets/earth.png';
+        this.earthSprite.src = this.earthUrl;
         this.earthSprite.onload = () => {
             this.earthLoaded = true;
             if (this.earthSprite.naturalWidth > 0) {
@@ -29,9 +34,9 @@ export class AssetManager {
         }
         
         // Cargar overlays de nubes y luna
-        this.cloudOverlay.src = 'assets/cloud.png';
-        this.cloudOverlayInverted.src = 'assets/cloud2.png';
-        this.moonOverlay.src = 'assets/moon.png';
+        this.cloudOverlay.src = this.cloudUrl;
+        this.cloudOverlayInverted.src = this.cloudInvertedUrl;
+        this.moonOverlay.src = this.moonUrl;
     }
     
     isEarthLoaded() {
