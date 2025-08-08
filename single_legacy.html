@@ -30,53 +30,33 @@
 </div>
 <script>
     const CONFIG = {
-        journeyMinutes: 2,
+        // Velocidades
+        initialSpeed: 20,
+        minSpeed: 0.1,
+
+        journeyMinutes: 2, // Duración del viaje
         stopStarsMinute: 1.5,
-        starSpeed: 20,
-        sun: {
-            appearMinute: 0,
-            growStartMinute: 0,
-            growEndMinute: 3.0,
-            initialSize: 1/500,
-            finalSize: 1/100,
-            positions: [
-                {minute: 0.0, pos: {x: 0.5, y: 0.5}},
-                {minute: 1.8, pos: {x: 0.5, y: 0.5}},
-                {minute: 3, pos: {x: 0, y: 0.5}}
-            ]
-        },
-        earth: {
-            appearMinute: 2.0,
-            growStartMinute: 2.0,
-            growEndMinute: 3.5,
-            initialSize: 0.0,
-            finalSize: 1/3,
-            positions: [
-                {minute: 0, pos: {x: 0.5, y: 0.5}},
-            ]
-        },
-        // Parámetros de sprites y animaciones
-        totalEarthFrames: 8000,
+        // sunAppears:
+        totalEarthFrames: 8000, // Parámetros de sprites
         framesPerEarthUpdate: 1,
         totalMoonFrames: 6000,
         framesPerMoonUpdate: 1,
         totalCloudFrames: 6500,
         framesPerCloudsUpdate: 1,
-        // Número de estrellas
-        numStars: 500,
-        // Inclinación de la Tierra
+        sunRelativePos: {x: 0.05, y: 0.5}, // Posición relativa del sol
+        numStars: 500, // Cantidad de elementos
         earthTiltDeg: 4,
-        // Ángulo inicial de la órbita de la Luna
         moonAngle: -100,
-        // Devuelve la duración total del viaje en milisegundos
+
         get journeyDuration() {
             return this.journeyMinutes * 60 * 1000;
         },
-        // Calcula el instante en milisegundos en el que aparece la Tierra
         get earthAppearTime() {
-            return this.earth.appearMinute * 60 * 1000;
+            return this.journeyDuration / 2;
         },
-        // Tiempo en milisegundos a partir del cual dejan de generarse estrellas
+        get earthDuration() {
+            return this.journeyDuration - this.earthAppearTime;
+        },
         get stopSpawnTime() {
             return (this.stopStarsMinute != null)
                 ? this.stopStarsMinute * 60 * 1000
@@ -302,7 +282,6 @@
             const maxD = this.game.canvas.width;
 
             this.stars.forEach(star => {
-                // La velocidad de las estrellas depende de starSpeed, no de la nave
                 star.z -= this.game.shipSpeed * star.speedFactor;
                 if (star.z <= 0) {
                     if (this.game.elapsed < this.game.config.stopSpawnTime) {
@@ -323,97 +302,28 @@
             this.x = 0;
             this.y = 0;
             this.size = 0;
-            this.visible = false;
+            this.updatePosition();
         }
 
-        /**
-         * Actualiza tamaño y posición del Sol en función del tiempo transcurrido.
-         * El tamaño se interpola entre initialSize y finalSize según el intervalo
-         * de crecimiento definido en el objeto de configuración. La posición se
-         * obtiene interpolando la lista de posiciones. Si el Sol no ha aparecido
-         * todavía, se marca como no visible.
-         */
-        update() {
-            const elapsed = this.game.elapsed || 0;
-            const cfg = this.game.config.sun;
-            const canvasW = this.game.canvas.width;
-            const canvasH = this.game.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
-
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            // Visibilidad
-            if (elapsed < appearTime) {
-                this.visible = false;
-                return;
-            }
-            this.visible = true;
-
-            // Tamaño (radio) con interpolación
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
-            } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
-            }
-            this.size = minDim * sizeFactor;
-
-            // Posición relativa (interpolada)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                // Si el tiempo es anterior al primer punto, tomar el primero
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
-                    // Buscar segmento donde cae el tiempo
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
-                }
-            }
-            // Posición por defecto si no hay lista de posiciones
-            if (!relPos) {
-                const fallback = this.game.config.sunRelativePos || {x: 0.05, y: 0.5};
-                relPos = fallback;
-            }
-            this.x = relPos.x * canvasW;
-            this.y = relPos.y * canvasH;
+        updatePosition() {
+            const minDim = Math.min(this.game.canvas.width, this.game.canvas.height);
+            this.x = this.game.config.sunRelativePos.x * this.game.canvas.width;
+            this.y = this.game.config.sunRelativePos.y * this.game.canvas.height;
+            this.size = minDim * 0.03;
         }
 
         onResize() {
-            // Las posiciones y tamaños se recalculan en update() cada frame
+            this.updatePosition();
         }
 
         draw(ctx) {
-            console.log(this.size)
-            if (!this.visible) return;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'yellow'; // Color sólido
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+            grad.addColorStop(0, 'rgba(255,230,150,1)');
+            grad.addColorStop(1, 'rgba(255,200,50,0)');
+            ctx.fillStyle = grad;
             ctx.fill();
-
         }
     }
 
@@ -595,6 +505,7 @@
             const isBehind = depth < 0;
 
             if (behind === isBehind) {
+                // const alpha = behind ? 0.8 : 1.0;
                 const alpha = 1.0;
                 this.drawMoonOverlay(
                     ctx,
@@ -724,11 +635,7 @@
             this.ui = new UI(this);
 
             this.startTime = performance.now();
-            // Establecer una velocidad fija para las estrellas
-            this.shipSpeed = CONFIG.starSpeed;
-
-            // Indicador de visibilidad de la Tierra
-            this.earthVisible = false;
+            this.shipSpeed = CONFIG.initialSpeed;
 
             this.setupCanvas();
             this.setupEvents();
@@ -759,6 +666,7 @@
         resizeCanvas() {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
+            this.sun.onResize();
             this.stars.onResize();
         }
 
@@ -767,77 +675,30 @@
             this.elapsed = now - this.startTime;
         }
 
-        /**
-         * Calcula las dimensiones y la posición de la Tierra en función del tiempo.
-         * Determina también si la Tierra debe ser visible.
-         */
-        computeEarthTransform() {
-            const elapsed = this.elapsed || 0;
-            const cfg = this.config.earth;
-            const canvasW = this.canvas.width;
-            const canvasH = this.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
-
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            if (elapsed < appearTime) {
-                this.earthVisible = false;
-                this.boxSize = 0;
-                return;
-            }
-            this.earthVisible = true;
-
-            // Tamaño de la Tierra (diámetro)
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
+        updateShipSpeed() {
+            const midSp = CONFIG.initialSpeed * 0.25;
+            if (this.elapsed <= CONFIG.earthAppearTime) {
+                const t = this.elapsed / CONFIG.earthAppearTime;
+                this.shipSpeed = CONFIG.initialSpeed - (CONFIG.initialSpeed - midSp) * t;
             } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
+                const t2 = (this.elapsed - CONFIG.earthAppearTime) / CONFIG.earthDuration;
+                this.shipSpeed = midSp - (midSp - CONFIG.minSpeed) * Math.min(t2, 1);
             }
-            this.boxSize = minDim * sizeFactor;
+        }
 
-            // Posición relativa (centro de la Tierra)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
-                }
-            }
-            if (!relPos) {
-                // Posición por defecto en el centro
-                relPos = {x: 0.5, y: 0.5};
-            }
+        updateProgress() {
+            const progress = (this.elapsed - CONFIG.earthAppearTime) / CONFIG.earthDuration;
+            this.progress = Math.min(Math.max(progress, 0), 1);
+        }
 
-            this.cx = relPos.x * canvasW;
-            this.cy = relPos.y * canvasH;
-            this.dx = this.cx - this.boxSize / 2;
-            this.dy = this.cy - this.boxSize / 2;
+        updateTargetSize() {
+            this.eased = Math.pow(this.progress, 3);
+            this.maxSize = Math.min(this.canvas.width, this.canvas.height) / 3;
+            this.boxSize = this.maxSize * this.eased;
+            this.dx = (this.canvas.width - this.boxSize) / 2;
+            this.dy = (this.canvas.height - this.boxSize) / 2;
+            this.cx = this.dx + this.boxSize / 2;
+            this.cy = this.dy + this.boxSize / 2;
         }
 
         drawBackground(ctx) {
@@ -848,11 +709,9 @@
         update() {
             if (!this.play) return;
             this.updateElapsedTime();
-            // Actualizar el Sol
-            this.sun.update();
-            // Calcular dimensión y posición de la Tierra
-            this.computeEarthTransform();
-            // Actualizar animaciones
+            this.updateShipSpeed();
+            this.updateProgress();
+            this.updateTargetSize();
             this.stars.update();
             this.earth.update();
             this.moon.update();
@@ -863,15 +722,11 @@
             if (!this.play) return;
 
             this.drawBackground(this.ctx);
-            // Dibujar estrellas al frente
             this.stars.draw(this.ctx);
-            // Dibujar Sol si está visible
             this.sun.draw(this.ctx);
-            // Dibujar estrellas de fondo
             this.stars.draw(this.ctx, true);
 
-            // Dibujar la Tierra, nubes y Luna si corresponde
-            if (this.earthVisible && this.boxSize > 0) {
+            if (this.progress > 0) {
                 this.moon.draw(this.ctx, true);
                 this.clouds.draw(this.ctx, true);
                 this.earth.draw(this.ctx);
@@ -879,14 +734,13 @@
                 this.moon.draw(this.ctx, false);
             }
 
-            // Cronómetro
             this.ui.drawTimer(this.ctx, this.elapsed, CONFIG.journeyDuration);
-            // No se muestra la velocidad porque la nave no tiene velocidad propia
+            this.ui.drawSpeed(this.ctx, this.shipSpeed);
         }
 
         animate() {
-            this.update();
-            this.draw();
+            this.update()
+            this.draw()
             requestAnimationFrame(() => this.animate());
         }
     }

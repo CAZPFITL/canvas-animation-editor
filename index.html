@@ -25,6 +25,10 @@
 </head>
 <body>
 <canvas id="viaje"></canvas>
+<div id="audio-controls" style="position:fixed; left:10px; top:60px; z-index:10; color:#fff; font:16px monospace;">
+    <button id="music-toggle">Play</button>
+    <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5">
+</div>
 <script type="module" src="game.js"></script>
 </body>
 </html>
