@@ -1,6 +1,5 @@
-// Gestión de assets (imágenes)
 export class AssetManager {
-    earthUrl = './assets/img/earthy.png'
+    earthUrl = './assets/img/earth.png'
     cloudUrl = './assets/img/cloud.png'
     cloudInvertedUrl = './assets/img/cloud2.png'
     moonUrl = './assets/img/moon.png'

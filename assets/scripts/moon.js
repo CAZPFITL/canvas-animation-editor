@@ -50,7 +50,8 @@ export class Moon {
         const isBehind = depth < 0;
 
         if (behind === isBehind) {
-            const alpha = behind ? 0.8 : 1.0;
+            // const alpha = behind ? 0.8 : 1.0;
+            const alpha = 1.0;
             this.drawMoonOverlay(
                 ctx,
                 this.game.assetManager.getMoonOverlay(),
@@ -68,7 +69,7 @@ export class Moon {
                 offsetX: 0,
                 offsetY: 0,
                 innerColor: behind ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)',
-                outerColor: 'rgba(0,0,0,0.4)'
+                outerColor: 'rgba(50,50,50,0.08)'
             });
 
             applySpecularHighlight(...moonArgs, {

@@ -43,13 +43,11 @@ export class Earth {
 
             ctx.restore();
 
-            const earthArgs = [this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.98];
-
             applyLighting(this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.98, {
                 offsetX: 0,
                 offsetY: 0,
-                innerColor: 'rgba(255,255,255,0.2)',
-                outerColor: 'rgba(0,0,0,0.3)'
+                innerColor: 'rgba(255,255,255,0.1)',
+                outerColor: 'rgba(80,80,80,0.08)'
             });
 
             applySpecularHighlight(this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.98, {
@@ -60,7 +58,7 @@ export class Earth {
             });
 
             applyAtmosphere(this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.95, {
-                color: 'rgba(0,150,255,0.3)'
+                color: 'rgba(148,210,255,0.2)'
             });
         }
     }

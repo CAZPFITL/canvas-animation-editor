@@ -1,5 +1,3 @@
-
-// Configuración global del juego
 export const CONFIG = {
     // Velocidades
     initialSpeed: 20,
