@@ -41,18 +41,20 @@
             finalSize: 1/100,
             positions: [
                 {minute: 0.0, pos: {x: 0.5, y: 0.5}},
-                {minute: 1.8, pos: {x: 0.5, y: 0.5}},
-                {minute: 3, pos: {x: 0, y: 0.5}}
+                {minute: 0.5, pos: {x: 0, y: 0}},
+                // {minute: 1.8, pos: {x: 0.5, y: 0.5}},
+                // {minute: 3, pos: {x: 0, y: 0.5}}
             ]
         },
         earth: {
-            appearMinute: 2.0,
-            growStartMinute: 2.0,
-            growEndMinute: 3.5,
-            initialSize: 0.0,
+            appearMinute: 0.0,
+            growStartMinute: 0.0,
+            growEndMinute: 0.5,
+            initialSize: 1/100,
             finalSize: 1/3,
             positions: [
                 {minute: 0, pos: {x: 0.5, y: 0.5}},
+                {minute: 0.5, pos: {x: 0.8, y: 0.8}},
             ]
         },
         // Parámetros de sprites y animaciones
@@ -326,13 +328,20 @@
             this.visible = false;
         }
 
-        /**
-         * Actualiza tamaño y posición del Sol en función del tiempo transcurrido.
-         * El tamaño se interpola entre initialSize y finalSize según el intervalo
-         * de crecimiento definido en el objeto de configuración. La posición se
-         * obtiene interpolando la lista de posiciones. Si el Sol no ha aparecido
-         * todavía, se marca como no visible.
-         */
+        onResize() {
+            // Las posiciones y tamaños se recalculan en update() cada frame
+        }
+
+        draw(ctx) {
+            console.log(this.size)
+            if (!this.visible) return;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'yellow'; // Color sólido
+            ctx.fill();
+
+        }
+
         update() {
             const elapsed = this.game.elapsed || 0;
             const cfg = this.game.config.sun;
@@ -400,20 +409,6 @@
             }
             this.x = relPos.x * canvasW;
             this.y = relPos.y * canvasH;
-        }
-
-        onResize() {
-            // Las posiciones y tamaños se recalculan en update() cada frame
-        }
-
-        draw(ctx) {
-            console.log(this.size)
-            if (!this.visible) return;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'yellow'; // Color sólido
-            ctx.fill();
-
         }
     }
 
@@ -626,14 +621,12 @@
         }
 
         update() {
-            // Avanzar frame de la Luna
             this.moonFrameCounter++;
             if (this.moonFrameCounter >= this.game.config.framesPerMoonUpdate) {
                 this.moonFrameCounter = 0;
                 this.moonFrameIndex = (this.moonFrameIndex + 1) % this.game.config.totalMoonFrames;
             }
 
-            // Actualizar ángulo orbital
             this.moonAngle += 0.001;
         }
     }
