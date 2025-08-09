@@ -429,11 +429,11 @@
 
                 // clip circular
                 ctx.beginPath();
-                ctx.arc(this.game.cx, this.game.cy, this.game.boxSize / 2, 0, Math.PI * 2);
+                ctx.arc(this.cx, this.cy, this.game.boxSize / 2, 0, Math.PI * 2);
                 ctx.clip();
 
                 const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-                ctx.translate(this.game.cx, this.game.cy);
+                ctx.translate(this.cx, this.cy);
                 ctx.rotate(tilt);
 
                 // escala para altura = boxSize
@@ -462,21 +462,21 @@
                 const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
                 const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
 
-                applyLighting(this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.98, {
+                applyLighting(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
                     offsetX: offX,
                     offsetY: offY,
                     innerColor: 'rgba(255,255,255,0.1)',
                     outerColor: 'rgba(80,80,80,0.08)'
                 });
 
-                applySpecularHighlight(this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.98, {
+                applySpecularHighlight(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
                     offsetX: offX,
                     offsetY: offY,
                     sizeFactor: 0.8,
                     color: 'rgba(255,255,255,0.2)'
                 });
 
-                applyAtmosphere(this.game.ctx, this.game.cx, this.game.cy, this.game.boxSize / 1.95, {
+                applyAtmosphere(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.95, {
                     color: 'rgba(148,210,255,0.2)'
                 });
             }
@@ -585,8 +585,8 @@
             const xOff = Math.sin(this.moonAngle) * orbit;
             const yOff = Math.cos(this.moonAngle) * orbit * 0.3;
             const depth = Math.cos(this.moonAngle);
-            const moonX = this.game.cx + xOff;
-            const moonY = this.game.cy + yOff;
+            const moonX = this.game.earth.cx + xOff;
+            const moonY = this.game.earth.cy + yOff;
             const isBehind = depth < 0;
 
             if (behind === isBehind) {
@@ -644,14 +644,14 @@
 
             // Recorte circular alrededor de la Tierra
             ctx.beginPath();
-            ctx.arc(this.game.cx, this.game.cy, this.game.boxSize / 1.98, 0, Math.PI * 2);
+            ctx.arc(this.game.earth.cx, this.game.earth.cy, this.game.boxSize / 1.98, 0, Math.PI * 2);
             ctx.clip();
 
             // Opacidad
             ctx.globalAlpha = alpha;
 
             const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-            ctx.translate(this.game.cx, this.game.cy);
+            ctx.translate(this.game.earth.cx, this.game.earth.cy);
             ctx.rotate(tilt);
 
             const scale = this.game.boxSize / img.naturalHeight;
@@ -827,10 +827,10 @@
                 relPos = {x: 0.5, y: 0.5};
             }
 
-            this.cx = relPos.x * canvasW;
-            this.cy = relPos.y * canvasH;
-            this.dx = this.cx - this.boxSize / 2;
-            this.dy = this.cy - this.boxSize / 2;
+            this.earth.cx = relPos.x * canvasW;
+            this.earth.cy = relPos.y * canvasH;
+            this.dx = this.earth.cx - this.boxSize / 2;
+            this.dy = this.earth.cy - this.boxSize / 2;
         }
 
         drawBackground(ctx) {
