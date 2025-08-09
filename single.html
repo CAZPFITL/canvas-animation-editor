@@ -37,8 +37,8 @@
             appearMinute: 0,
             growStartMinute: 0,
             growEndMinute: 3.0,
-            initialSize: 1/500,
-            finalSize: 1/100,
+            initialSize: 1 / 500,
+            finalSize: 1 / 100,
             positions: [
                 {minute: 0.0, pos: {x: 0.5, y: 0.5}},
                 {minute: 0.5, pos: {x: 0, y: 0}},
@@ -50,8 +50,8 @@
             appearMinute: 0.0,
             growStartMinute: 0.0,
             growEndMinute: 0.5,
-            initialSize: 1/100,
-            finalSize: 1/3,
+            initialSize: 1 / 100,
+            finalSize: 1 / 3,
             positions: [
                 {minute: 0, pos: {x: 0.5, y: 0.5}},
                 {minute: 0.5, pos: {x: 0.8, y: 0.8}},
@@ -208,7 +208,7 @@
         getEarthSprite() {
             return this.earthSprite;
         }
-
+/**/
         getCloudOverlay() {
             return this.cloudOverlay;
         }
@@ -221,7 +221,9 @@
             return this.moonOverlay;
         }
 
-        getSong() { return this.song; }
+        getSong() {
+            return this.song;
+        }
     }
 
     class Stars {
@@ -333,7 +335,6 @@
         }
 
         draw(ctx) {
-            console.log(this.size)
             if (!this.visible) return;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -488,6 +489,74 @@
                 this.frameCounter = 0;
                 this.earthFrameIndex = (this.earthFrameIndex + 1) % this.game.config.totalEarthFrames;
             }
+
+            // Array Positions updates
+            const elapsed = this.game.elapsed || 0;
+            const cfg = this.game.config.earth;
+            const canvasW = this.game.canvas.width;
+            const canvasH = this.game.canvas.height;
+            const minDim = Math.min(canvasW, canvasH);
+
+            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
+            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
+            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
+
+            if (elapsed < appearTime) {
+                this.game.earthVisible = false;
+                this.game.boxSize = 0;
+                return;
+            }
+            this.game.earthVisible = true;
+
+            // Tamaño de la Tierra (diámetro)
+            let sizeFactor;
+            if (elapsed <= growStartTime) {
+                sizeFactor = cfg.initialSize;
+            } else if (elapsed >= growEndTime) {
+                sizeFactor = cfg.finalSize;
+            } else {
+                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
+                const eased = Math.pow(t, 3);
+                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
+            }
+            this.game.boxSize = minDim * sizeFactor;
+
+            // Posición relativa (centro de la Tierra)
+            let relPos;
+            const positions = cfg.positions || [];
+            if (positions.length > 0) {
+                const firstT = positions[0].minute * 60 * 1000;
+                const lastT = positions[positions.length - 1].minute * 60 * 1000;
+                if (elapsed <= firstT) {
+                    relPos = positions[0].pos;
+                } else if (elapsed >= lastT) {
+                    relPos = positions[positions.length - 1].pos;
+                } else {
+                    for (let i = 0; i < positions.length - 1; i++) {
+                        const t1 = positions[i].minute * 60 * 1000;
+                        const t2 = positions[i + 1].minute * 60 * 1000;
+                        if (elapsed >= t1 && elapsed <= t2) {
+                            const p1 = positions[i].pos;
+                            const p2 = positions[i + 1].pos;
+                            const ratio = (elapsed - t1) / (t2 - t1);
+                            relPos = {
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y + (p2.y - p1.y) * ratio
+                            };
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!relPos) {
+                // Posición por defecto en el centro
+                relPos = {x: 0.5, y: 0.5};
+            }
+
+            this.cx = relPos.x * canvasW;
+            this.cy = relPos.y * canvasH;
+            this.game.dx = this.cx - this.game.boxSize / 2;
+            this.game.dy = this.cy - this.game.boxSize / 2;
         }
     }
 
@@ -498,17 +567,21 @@
             this.isPlaying = false;
             this.setVolume(0.5);
         }
+
         play() {
             this.audio.play();
             this.isPlaying = true;
         }
+
         pause() {
             this.audio.pause();
             this.isPlaying = false;
         }
+
         toggle() {
             this.isPlaying ? this.pause() : this.play();
         }
+
         setVolume(v) {
             this.audio.volume = Math.max(0, Math.min(1, v));
         }
@@ -760,79 +833,6 @@
             this.elapsed = now - this.startTime;
         }
 
-        /**
-         * Calcula las dimensiones y la posición de la Tierra en función del tiempo.
-         * Determina también si la Tierra debe ser visible.
-         */
-        computeEarthTransform() {
-            const elapsed = this.elapsed || 0;
-            const cfg = this.config.earth;
-            const canvasW = this.canvas.width;
-            const canvasH = this.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
-
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            if (elapsed < appearTime) {
-                this.earthVisible = false;
-                this.boxSize = 0;
-                return;
-            }
-            this.earthVisible = true;
-
-            // Tamaño de la Tierra (diámetro)
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
-            } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
-            }
-            this.boxSize = minDim * sizeFactor;
-
-            // Posición relativa (centro de la Tierra)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
-                }
-            }
-            if (!relPos) {
-                // Posición por defecto en el centro
-                relPos = {x: 0.5, y: 0.5};
-            }
-
-            this.earth.cx = relPos.x * canvasW;
-            this.earth.cy = relPos.y * canvasH;
-            this.dx = this.earth.cx - this.boxSize / 2;
-            this.dy = this.earth.cy - this.boxSize / 2;
-        }
-
         drawBackground(ctx) {
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -843,8 +843,6 @@
             this.updateElapsedTime();
             // Actualizar el Sol
             this.sun.update();
-            // Calcular dimensión y posición de la Tierra
-            this.computeEarthTransform();
             // Actualizar animaciones
             this.stars.update();
             this.earth.update();
