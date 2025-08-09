@@ -36,25 +36,23 @@
         sun: {
             appearMinute: 0,
             growStartMinute: 0,
-            growEndMinute: 3.0,
-            initialSize: 1 / 500,
-            finalSize: 1 / 100,
+            growEndMinute: 0.2,
+            initialSize: 1 / 100,
+            finalSize: 1 / 3,
             positions: [
                 {minute: 0.0, pos: {x: 0.5, y: 0.5}},
-                {minute: 0.5, pos: {x: 0, y: 0}},
-                // {minute: 1.8, pos: {x: 0.5, y: 0.5}},
-                // {minute: 3, pos: {x: 0, y: 0.5}}
+                {minute: 0.2, pos: {x: 0.2, y: 0.2}},
             ]
         },
         earth: {
             appearMinute: 0.0,
             growStartMinute: 0.0,
-            growEndMinute: 0.5,
+            growEndMinute: 0.2,
             initialSize: 1 / 100,
             finalSize: 1 / 3,
             positions: [
-                {minute: 0, pos: {x: 0.5, y: 0.5}},
-                {minute: 0.5, pos: {x: 0.8, y: 0.8}},
+                {minute: 0.0, pos: {x: 0.5, y: 0.5}},
+                {minute: 0.2, pos: {x: 0.8, y: 0.8}},
             ]
         },
         // Parámetros de sprites y animaciones
@@ -208,7 +206,7 @@
         getEarthSprite() {
             return this.earthSprite;
         }
-/**/
+
         getCloudOverlay() {
             return this.cloudOverlay;
         }
@@ -236,7 +234,7 @@
         }
 
         createStars() {
-            const numStars = 500;
+            const numStars = this.game.config.numStars || 500;
             this.stars = [];
             for (let i = 0; i < numStars; i++) {
                 this.stars.push({
@@ -306,7 +304,6 @@
             const maxD = this.game.canvas.width;
 
             this.stars.forEach(star => {
-                // La velocidad de las estrellas depende de starSpeed, no de la nave
                 star.z -= this.game.shipSpeed * star.speedFactor;
                 if (star.z <= 0) {
                     if (this.game.elapsed < this.game.config.stopSpawnTime) {
@@ -330,17 +327,12 @@
             this.visible = false;
         }
 
-        onResize() {
-            // Las posiciones y tamaños se recalculan en update() cada frame
-        }
-
         draw(ctx) {
             if (!this.visible) return;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'yellow'; // Color sólido
+            ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'yellow';
             ctx.fill();
-
         }
 
         update() {
@@ -411,87 +403,159 @@
             this.x = relPos.x * canvasW;
             this.y = relPos.y * canvasH;
         }
+
+        syncToElapsed() { this.update(); }
     }
 
     class Earth {
         constructor(game) {
             this.game = game;
             this.earthFrameIndex = 0;
-            this.frameCounter = 0;
+            // this.frameCounter = 0;
+            this.visible = false;
+            this.size = 0;
+            this.cx = 0;
+            this.cy = 0;
+
+            this._framesPerMs = 60 / 1000;
         }
 
         draw(ctx) {
             const earthImg = this.game.assetManager.getEarthSprite();
-            if (earthImg.complete) {
-                ctx.save();
+            if (!this.visible || this.size <= 0 || !earthImg.complete) return;
 
-                ctx.imageSmoothingEnabled = false;
-                ctx.imageSmoothingQuality = 'low';
+            ctx.save();
 
-                // clip circular
-                ctx.beginPath();
-                ctx.arc(this.cx, this.cy, this.game.boxSize / 2, 0, Math.PI * 2);
-                ctx.clip();
+            ctx.imageSmoothingEnabled = false;
+            ctx.imageSmoothingQuality = 'low';
 
-                const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-                ctx.translate(this.cx, this.cy);
-                ctx.rotate(tilt);
+            // clip circular
+            ctx.beginPath();
+            ctx.arc(this.cx, this.cy, this.size / 2, 0, Math.PI * 2);
+            ctx.clip();
 
-                // escala para altura = boxSize
-                const scale = this.game.boxSize / earthImg.naturalHeight;
-                const overlayW = earthImg.naturalWidth * scale;
-                const overlayH = this.game.boxSize;
+            const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
+            ctx.translate(this.cx, this.cy);
+            ctx.rotate(tilt);
 
-                // origen centrado
-                const xOrigin = -overlayW / 2;
-                const yOrigin = -overlayH / 2;
+            // escala para altura = size
+            const scale = this.size / earthImg.naturalHeight;
+            const overlayW = earthImg.naturalWidth * scale;
+            const overlayH = this.size;
 
-                // offset animado hacia la derecha + wrap
-                let totalOffset = (this.earthFrameIndex / this.game.config.totalEarthFrames) * overlayW;
-                totalOffset = ((totalOffset % overlayW) + overlayW) % overlayW;
+            // origen centrado
+            const xOrigin = -overlayW / 2;
+            const yOrigin = -overlayH / 2;
 
-                // dos repeticiones
-                const x1 = xOrigin + totalOffset;
-                const x2 = x1 - overlayW;
+            // offset animado hacia la derecha + wrap
+            let totalOffset = (this.earthFrameIndex / this.game.config.totalEarthFrames) * overlayW;
+            totalOffset = ((totalOffset % overlayW) + overlayW) % overlayW;
 
-                ctx.drawImage(earthImg, x1, yOrigin, overlayW, overlayH);
-                ctx.drawImage(earthImg, x2, yOrigin, overlayW, overlayH);
+            // dos repeticiones
+            const x1 = xOrigin + totalOffset;
+            const x2 = x1 - overlayW;
 
-                ctx.restore();
+            ctx.drawImage(earthImg, x1, yOrigin, overlayW, overlayH);
+            ctx.drawImage(earthImg, x2, yOrigin, overlayW, overlayH);
 
-                const baseX = -0.2, baseY = 0.2;
-                const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
-                const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
+            ctx.restore();
 
-                applyLighting(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
-                    offsetX: offX,
-                    offsetY: offY,
-                    innerColor: 'rgba(255,255,255,0.1)',
-                    outerColor: 'rgba(80,80,80,0.08)'
-                });
+            const baseX = -0.2, baseY = 0.2;
+            const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
+            const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
 
-                applySpecularHighlight(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
-                    offsetX: offX,
-                    offsetY: offY,
-                    sizeFactor: 0.8,
-                    color: 'rgba(255,255,255,0.2)'
-                });
+            applyLighting(this.game.ctx, this.cx, this.cy, this.size / 1.98, {
+                offsetX: offX,
+                offsetY: offY,
+                innerColor: 'rgba(255,255,255,0.1)',
+                outerColor: 'rgba(80,80,80,0.08)'
+            });
 
-                applyAtmosphere(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.95, {
-                    color: 'rgba(148,210,255,0.2)'
-                });
-            }
+            applySpecularHighlight(this.game.ctx, this.cx, this.cy, this.size / 1.98, {
+                offsetX: offX,
+                offsetY: offY,
+                sizeFactor: 0.8,
+                color: 'rgba(255,255,255,0.2)'
+            });
+
+            applyAtmosphere(this.game.ctx, this.cx, this.cy, this.size / 1.95, {
+                color: 'rgba(148,210,255,0.2)'
+            });
         }
 
         update() {
-            this.frameCounter++;
-            if (this.frameCounter >= this.game.config.framesPerEarthUpdate) {
-                this.frameCounter = 0;
-                this.earthFrameIndex = (this.earthFrameIndex + 1) % this.game.config.totalEarthFrames;
-            }
-
-            // Array Positions updates
+            // // animación del “scroll” del sprite
+            // this.frameCounter++;
+            // if (this.frameCounter >= this.game.config.framesPerEarthUpdate) {
+            //     this.frameCounter = 0;
+            //     this.earthFrameIndex = (this.earthFrameIndex + 1) % this.game.config.totalEarthFrames;
+            // }
+            //
+            // // timeline de tamaño/posición/visibilidad
+            // const elapsed = this.game.elapsed || 0;
+            // const cfg = this.game.config.earth;
+            // const canvasW = this.game.canvas.width;
+            // const canvasH = this.game.canvas.height;
+            // const minDim = Math.min(canvasW, canvasH);
+            //
+            // const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
+            // const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
+            // const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
+            //
+            // if (elapsed < appearTime) {
+            //     this.visible = false;
+            //     this.size = 0;
+            //     return;
+            // }
+            // this.visible = true;
+            //
+            // // Tamaño (diámetro)
+            // let sizeFactor;
+            // if (elapsed <= growStartTime) {
+            //     sizeFactor = cfg.initialSize;
+            // } else if (elapsed >= growEndTime) {
+            //     sizeFactor = cfg.finalSize;
+            // } else {
+            //     const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
+            //     const eased = Math.pow(t, 3);
+            //     sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
+            // }
+            // this.size = minDim * sizeFactor;
+            //
+            // // Posición relativa (centro)
+            // let relPos;
+            // const positions = cfg.positions || [];
+            // if (positions.length > 0) {
+            //     const firstT = positions[0].minute * 60 * 1000;
+            //     const lastT = positions[positions.length - 1].minute * 60 * 1000;
+            //     if (elapsed <= firstT) {
+            //         relPos = positions[0].pos;
+            //     } else if (elapsed >= lastT) {
+            //         relPos = positions[positions.length - 1].pos;
+            //     } else {
+            //         for (let i = 0; i < positions.length - 1; i++) {
+            //             const t1 = positions[i].minute * 60 * 1000;
+            //             const t2 = positions[i + 1].minute * 60 * 1000;
+            //             if (elapsed >= t1 && elapsed <= t2) {
+            //                 const p1 = positions[i].pos;
+            //                 const p2 = positions[i + 1].pos;
+            //                 const ratio = (elapsed - t1) / (t2 - t1);
+            //                 relPos = {
+            //                     x: p1.x + (p2.x - p1.x) * ratio,
+            //                     y: p1.y + (p2.y - p1.y) * ratio
+            //                 };
+            //                 break;
+            //             }
+            //         }
+            //     }
+            // }
+            // if (!relPos) relPos = { x: 0.5, y: 0.5 };
+            //
+            // this.cx = relPos.x * canvasW;
+            // this.cy = relPos.y * canvasH;
             const elapsed = this.game.elapsed || 0;
+            this.earthFrameIndex = Math.floor(elapsed * this._framesPerMs) % this.game.config.totalEarthFrames;
+
             const cfg = this.game.config.earth;
             const canvasW = this.game.canvas.width;
             const canvasH = this.game.canvas.height;
@@ -501,63 +565,45 @@
             const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
             const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
 
-            if (elapsed < appearTime) {
-                this.game.earthVisible = false;
-                this.game.boxSize = 0;
-                return;
-            }
-            this.game.earthVisible = true;
+            if (elapsed < appearTime) { this.visible = false; this.size = 0; return; }
+            this.visible = true;
 
-            // Tamaño de la Tierra (diámetro)
             let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
-            } else {
+            if (elapsed <= growStartTime) sizeFactor = cfg.initialSize;
+            else if (elapsed >= growEndTime) sizeFactor = cfg.finalSize;
+            else {
                 const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
+                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * (t * t * t);
             }
-            this.game.boxSize = minDim * sizeFactor;
+            this.size = minDim * sizeFactor;
 
-            // Posición relativa (centro de la Tierra)
             let relPos;
             const positions = cfg.positions || [];
             if (positions.length > 0) {
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
+                const toMs = m => m * 60 * 1000;
+                const firstT = toMs(positions[0].minute);
+                const lastT = toMs(positions[positions.length - 1].minute);
+                if (elapsed <= firstT) relPos = positions[0].pos;
+                else if (elapsed >= lastT) relPos = positions[positions.length - 1].pos;
+                else {
                     for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
+                        const t1 = toMs(positions[i].minute), t2 = toMs(positions[i + 1].minute);
                         if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
+                            const r = (elapsed - t1) / (t2 - t1);
+                            const p1 = positions[i].pos, p2 = positions[i + 1].pos;
+                            relPos = { x: p1.x + (p2.x - p1.x) * r, y: p1.y + (p2.y - p1.y) * r };
                             break;
                         }
                     }
                 }
             }
-            if (!relPos) {
-                // Posición por defecto en el centro
-                relPos = {x: 0.5, y: 0.5};
-            }
+            if (!relPos) relPos = { x: 0.5, y: 0.5 };
 
             this.cx = relPos.x * canvasW;
             this.cy = relPos.y * canvasH;
-            this.game.dx = this.cx - this.game.boxSize / 2;
-            this.game.dy = this.cy - this.game.boxSize / 2;
         }
+
+        syncToElapsed() { this.update(); }
     }
 
     class AudioPlayer {
@@ -617,8 +663,10 @@
         constructor(game) {
             this.game = game;
             this.moonFrameIndex = 0;
-            this.moonFrameCounter = 0;
+            // this.moonFrameCounter = 0;
             this.moonAngle = this.game.config.moonAngle;
+            this._framesPerMs = 60 / 1000;
+            this._omega = 0.001 / 16.6667;
         }
 
         drawMoonOverlay(ctx, img, cx, cy, moonSize, frameIndex, totalFrames, alpha) {
@@ -653,8 +701,10 @@
         }
 
         draw(ctx, behind = false) {
-            const orbit = this.game.boxSize * 0.8;
-            const moonSz = this.game.boxSize * 0.15;
+            if (!this.game.earth.visible || this.game.earth.size <= 0) return;
+
+            const orbit = this.game.earth.size * 0.8;
+            const moonSz = this.game.earth.size * 0.15;
             const xOff = Math.sin(this.moonAngle) * orbit;
             const yOff = Math.cos(this.moonAngle) * orbit * 0.3;
             const depth = Math.cos(this.moonAngle);
@@ -694,30 +744,37 @@
         }
 
         update() {
-            this.moonFrameCounter++;
-            if (this.moonFrameCounter >= this.game.config.framesPerMoonUpdate) {
-                this.moonFrameCounter = 0;
-                this.moonFrameIndex = (this.moonFrameIndex + 1) % this.game.config.totalMoonFrames;
-            }
+            // this.moonFrameCounter++;
+            // if (this.moonFrameCounter >= this.game.config.framesPerMoonUpdate) {
+            //     this.moonFrameCounter = 0;
+            //     this.moonFrameIndex = (this.moonFrameIndex + 1) % this.game.config.totalMoonFrames;
+            // }
+            //
+            // this.moonAngle += 0.001;
 
-            this.moonAngle += 0.001;
+            const elapsed = this.game.elapsed || 0;
+            this.moonFrameIndex = Math.floor(elapsed * this._framesPerMs) % this.game.config.totalMoonFrames;
+            this.moonAngle = this.game.config.moonAngle + this._omega * elapsed;
         }
+
+        syncToElapsed() { this.update(); }
     }
 
     class Clouds {
         constructor(game) {
             this.game = game;
-            this.cloudFrameCounter = 0;
+            // this.cloudFrameCounter = 0;
             this.cloudFrameIndex = 0;
+            this._framesPerMs = 60 / 1000;
         }
 
         drawCloudLayer(ctx, img, alpha, invert, initShift = 0) {
-            if (!img.complete) return;
+            if (!img.complete || !this.game.earth.visible || this.game.earth.size <= 0) return;
             ctx.save();
 
             // Recorte circular alrededor de la Tierra
             ctx.beginPath();
-            ctx.arc(this.game.earth.cx, this.game.earth.cy, this.game.boxSize / 1.98, 0, Math.PI * 2);
+            ctx.arc(this.game.earth.cx, this.game.earth.cy, this.game.earth.size / 1.98, 0, Math.PI * 2);
             ctx.clip();
 
             // Opacidad
@@ -727,14 +784,14 @@
             ctx.translate(this.game.earth.cx, this.game.earth.cy);
             ctx.rotate(tilt);
 
-            const scale = this.game.boxSize / img.naturalHeight;
+            const scale = this.game.earth.size / img.naturalHeight;
             const overlayW = img.naturalWidth * scale;
-            const overlayH = this.game.boxSize;
+            const overlayH = this.game.earth.size;
 
             const xOrigin = -overlayW / 2;
             const yOrigin = -overlayH / 2;
 
-            const baseShift = (this.cloudFrameIndex / CONFIG.totalCloudFrames) * overlayW;
+            const baseShift = (this.cloudFrameIndex / this.game.config.totalCloudFrames) * overlayW;
 
             let totalOffset = (baseShift + initShift) % overlayW;
             if (totalOffset < 0) totalOffset += overlayW;
@@ -752,8 +809,8 @@
         }
 
         draw(ctx, behind = false) {
-            const cloudsInvertedImg = this.game.assetManager.getCloudOverlayInverted()
-            const cloudsImg = this.game.assetManager.getCloudOverlay()
+            const cloudsInvertedImg = this.game.assetManager.getCloudOverlayInverted();
+            const cloudsImg = this.game.assetManager.getCloudOverlay();
 
             if (cloudsInvertedImg.complete && behind) {
                 this.drawCloudLayer(ctx, cloudsInvertedImg, 0.7, true);
@@ -765,19 +822,23 @@
         }
 
         update() {
-            this.cloudFrameCounter++;
-            if (this.cloudFrameCounter >= CONFIG.framesPerCloudsUpdate) {
-                this.cloudFrameCounter = 0;
-                this.cloudFrameIndex = (this.cloudFrameIndex + 1) % CONFIG.totalCloudFrames;
-            }
+            // this.cloudFrameCounter++;
+            // if (this.cloudFrameCounter >= this.game.config.framesPerCloudsUpdate) {
+            //     this.cloudFrameCounter = 0;
+            //     this.cloudFrameIndex = (this.cloudFrameIndex + 1) % this.game.config.totalCloudFrames;
+            // }
+            const elapsed = this.game.elapsed || 0;
+            this.cloudFrameIndex = Math.floor(elapsed * this._framesPerMs) % this.game.config.totalCloudFrames;
         }
+
+        syncToElapsed() { this.update(); }
     }
 
     class SpaceJourneyGame {
         constructor() {
             this.canvas = document.getElementById('viaje');
             this.ctx = this.canvas.getContext('2d');
-            this.config = CONFIG
+            this.config = CONFIG;
             this.play = false;
 
             this.assetManager = new AssetManager();
@@ -789,37 +850,64 @@
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
 
-            this.startTime = performance.now();
-            // Establecer una velocidad fija para las estrellas
-            this.shipSpeed = CONFIG.starSpeed;
+            this.elapsed = 0;
+            this.lastFrameTime = performance.now();
+            this.shipSpeed = this.config.starSpeed;
 
-            // Indicador de visibilidad de la Tierra
-            this.earthVisible = false;
-
-            this.setupCanvas();
+            this.resizeCanvas();
             this.setupEvents();
 
             this.animate();
         }
 
-        setupCanvas() {
-            this.resizeCanvas();
-        }
-
         setupEvents() {
+            // window.addEventListener('resize', () => this.resizeCanvas());
+            //
+            // const btn = document.getElementById('music-toggle');
+            // const slider = document.getElementById('music-volume');
+            //
+            // btn.addEventListener('click', () => this.setPlay(!this.play));
+            // slider.addEventListener('input', (e) => this.audio.setVolume(parseFloat(e.target.value)));
             window.addEventListener('resize', () => this.resizeCanvas());
 
             const btn = document.getElementById('music-toggle');
             const slider = document.getElementById('music-volume');
+            btn.addEventListener('click', () => this.setPlay(!this.play));
+            slider.addEventListener('input', (e) => this.audio.setVolume(parseFloat(e.target.value)));
 
-            btn.addEventListener('click', () => {
-                this.play = !this.play;
-                this.audio.toggle();
-                btn.textContent = this.audio.isPlaying ? 'Pause' : 'Play';
-            });
-            slider.addEventListener('input', (e) => {
-                this.audio.setVolume(parseFloat(e.target.value));
-            });
+            // Slider de tiempo (scrub)
+            const controls = document.getElementById('audio-controls');
+            this.timeSlider = document.createElement('input');
+            this.timeSlider.type = 'range';
+            this.timeSlider.min = 0;
+            this.timeSlider.max = this.config.journeyDuration;
+            this.timeSlider.step = 1;
+            this.timeSlider.value = this.elapsed;
+            this.timeSlider.style.width = '300px';
+            this.timeSlider.style.marginLeft = '10px';
+            controls.appendChild(this.timeSlider);
+
+            const onScrub = (ms) => {
+                const clamped = Math.max(0, Math.min(this.config.journeyDuration, ms|0));
+                this.elapsed = clamped;
+                const a = this.audio.audio; // HTMLAudioElement
+                if (!isNaN(a.duration) && isFinite(a.duration)) {
+                    a.currentTime = Math.max(0, Math.min(a.duration, clamped / 1000));
+                } else {
+                    a.currentTime = clamped / 1000;
+                }
+                this.syncToElapsed();
+            };
+
+            this.timeSlider.addEventListener('input', (e) => onScrub(parseFloat(e.target.value)));
+            this.timeSlider.addEventListener('change', (e) => onScrub(parseFloat(e.target.value)));
+        }
+
+        syncToElapsed() {
+            this.sun.syncToElapsed?.();
+            this.earth.syncToElapsed?.();
+            this.moon.syncToElapsed?.();
+            this.clouds.syncToElapsed?.();
         }
 
         resizeCanvas() {
@@ -828,9 +916,11 @@
             this.stars.onResize();
         }
 
-        updateElapsedTime() {
-            const now = performance.now();
-            this.elapsed = now - this.startTime;
+        setPlay(next) {
+            this.play = next;
+            this.lastFrameTime = performance.now();
+            if (next) this.audio.play(); else this.audio.pause();
+            document.getElementById('music-toggle').textContent = next ? 'Pause' : 'Play';
         }
 
         drawBackground(ctx) {
@@ -839,11 +929,7 @@
         }
 
         update() {
-            if (!this.play) return;
-            this.updateElapsedTime();
-            // Actualizar el Sol
             this.sun.update();
-            // Actualizar animaciones
             this.stars.update();
             this.earth.update();
             this.moon.update();
@@ -851,18 +937,12 @@
         }
 
         draw() {
-            if (!this.play) return;
-
             this.drawBackground(this.ctx);
-            // Dibujar estrellas al frente
             this.stars.draw(this.ctx);
-            // Dibujar Sol si está visible
             this.sun.draw(this.ctx);
-            // Dibujar estrellas de fondo
             this.stars.draw(this.ctx, true);
 
-            // Dibujar la Tierra, nubes y Luna si corresponde
-            if (this.earthVisible && this.boxSize > 0) {
+            if (this.earth.visible && this.earth.size > 0) {
                 this.moon.draw(this.ctx, true);
                 this.clouds.draw(this.ctx, true);
                 this.earth.draw(this.ctx);
@@ -870,23 +950,45 @@
                 this.moon.draw(this.ctx, false);
             }
 
-            // Cronómetro
-            this.ui.drawTimer(this.ctx, this.elapsed, CONFIG.journeyDuration);
-            // No se muestra la velocidad porque la nave no tiene velocidad propia
+            this.ui.drawTimer(this.ctx, this.elapsed, this.config.journeyDuration);
         }
 
         animate() {
-            this.update();
+            // const now = performance.now();
+            // const dt = now - this.lastFrameTime;
+            // this.lastFrameTime = now;
+            //
+            // if (this.play) {
+            //     this.elapsed += dt;
+            //     this.update();
+            // }
+            //
+            // this.draw();
+            //
+            // requestAnimationFrame(() => this.animate());
+            const now = performance.now();
+            const dt = now - this.lastFrameTime;
+            this.lastFrameTime = now;
+
+            if (this.play) {
+                this.elapsed += dt;
+                if (this.elapsed > this.config.journeyDuration) this.elapsed = this.config.journeyDuration;
+                this.update();
+            } else {
+                this.syncToElapsed();
+            }
+
+            if (this.timeSlider) this.timeSlider.value = this.elapsed;
+
             this.draw();
+
             requestAnimationFrame(() => this.animate());
         }
     }
 
-    // Inicializar el juego cuando se carga la página
     document.addEventListener('DOMContentLoaded', () => {
         new SpaceJourneyGame();
     });
-
 </script>
 </body>
 </html>
