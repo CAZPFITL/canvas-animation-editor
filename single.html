@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Viaje espacial a la Tierra</title>
+    <title>Star Fields</title>
     <style>
         html,
         body {
@@ -34,21 +34,37 @@
 <script>
     const CONFIG = {
         journeySeconds: 285,
-        stopStarsSecond: 90,
-        starSpeed: 20,
-        numStars: 500,
+        starfield: {
+            stopNearAt: 90,
+            numFar: 100,
+            numNear: 200,
+            farSpeedRange: [0.001, 0.005],
+            nearSpeedRange: [1.0, 5.0],
+            speedScale: 0.05,
+            focalLength: 128
+        },
         sun: {
             positions: [
                 { second: 0, pos: { x: 0.5, y: 0.5 }, size: 0 },
-                { second: 102, pos: { x: 0.5, y: 0.5 }, size: 0 },
-                { second: 102, pos: { x: 0.5, y: 0.5 }, size: 1 / 500 },
-                { second: 125, pos: { x: 0.5, y: 0.5 } },
-                { second: 160, pos: { x: -1 / 130, y: 0.45 }, size: 1 / 300 }
+                // 1:20 jump (appear as a small point in the horizon)
+                { second: 79, pos: { x: 0.5, y: 0.5 }, size: 0 },
+                { second: 80, pos: { x: 0.5, y: 0.5 }, size: 1/3000 },
+                // 1:40 jump (grow on drums enter)
+                { second: 100, size: 1/1200 },
+                { second: 102, size: 1 / 400 },
+                // star lateral displacement
+                { second: 114, pos: { x: 0.5, y: 0.5 }, size: 1 / 400 },
+                { second: 180, pos: { x: -1 / 130, y: 0.5 }, size: 1 / 100 }
             ]
         },
         earth: {
             positions: [
-                { second: 105, pos: { x: 0.5, y: 0.5 }, size: 0 },
+                { second: 0, pos: { x: 0.5, y: 0.5 }, size: 0 },
+
+                { second: 119, pos: { x: 0.5, y: 0.5 }, size: 0 },
+                { second: 120, pos: { x: 0.5, y: 0.5 }, size: 1 / 400 },
+
+                { second: 126, pos: { x: 0.5, y: 0.5 }, size: 1 / 500 },
                 { second: 285, size: 1 }
             ],
             animation: { scrollSpeed: 0.02 },
@@ -66,37 +82,8 @@
             const ks = this.earth.positions ?? [];
             if (!ks.length) return 0;
             return Math.min(...ks.map((k) => k.second ?? 0));
-        },
-        get stopSpawnTime() {
-            return this.stopStarsSecond != null ? this.stopStarsSecond : this.earthAppearTime - 10;
         }
     };
-
-    function maxSecondInConfig(obj) {
-        let m = 0;
-        function scan(o) {
-            if (!o || typeof o !== "object") return;
-            if (Array.isArray(o)) {
-                for (const it of o) scan(it);
-                return;
-            }
-            if (Array.isArray(o.positions)) {
-                for (const kf of o.positions) {
-                    if (kf && typeof kf.second === "number") m = Math.max(m, kf.second);
-                }
-            }
-            for (const v of Object.values(o)) scan(v);
-        }
-        scan(obj);
-        return m;
-    }
-
-    (function autoExtendJourneySeconds(cfg) {
-        const maxS = maxSecondInConfig(cfg);
-        if (typeof cfg.journeySeconds !== "number" || cfg.journeySeconds < maxS) {
-            cfg.journeySeconds = maxS;
-        }
-    })(CONFIG);
 
     function interpolatePos(elapsed, keyframes, fallback = { x: 0.5, y: 0.5 }) {
         const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
@@ -119,9 +106,7 @@
     }
 
     function interpolateSize(elapsed, keyframes, defaultSize = 0) {
-        const withSize = (keyframes || []).filter(
-            (k) => typeof k.size === "number" && typeof k.second === "number"
-        );
+        const withSize = (keyframes || []).filter((k) => typeof k.size === "number" && typeof k.second === "number");
         if (withSize.length === 0) return defaultSize;
         withSize.sort((a, b) => a.second - b.second);
         if (elapsed <= withSize[0].second) return withSize[0].size;
@@ -139,13 +124,8 @@
     }
 
     function applyLighting(ctx, cx, cy, radius, options = {}) {
-        const {
-            offsetX = 0.5,
-            offsetY = -0.5,
-            innerColor = "rgba(255,255,255,0.9)",
-            outerColor = "rgba(0,0,0,0.3)",
-            innerRadiusFactor = 0.1
-        } = options;
+        const { offsetX = 0.5, offsetY = -0.5, innerColor = "rgba(255,255,255,0.9)", outerColor = "rgba(0,0,0,0.3)", innerRadiusFactor = 0.1 } =
+            options;
         ctx.save();
         ctx.globalCompositeOperation = "multiply";
         const lightX = cx + radius * offsetX;
@@ -231,87 +211,142 @@
         }
     }
 
-    class Stars {
+    class StarField {
         constructor(game) {
             this.game = game;
-            this.stars = [];
-            this.backgroundStars = [];
-            this.createStars();
-            this.createBackgroundStars();
+            this.farStars = [];
+            this.nearStars = [];
+            this.width = 1;
+            this.height = 1;
+            this.centerX = 0.5;
+            this.centerY = 0.5;
+            this.focal = CONFIG.starfield.focalLength;
+            this.cutoffActivated = false;
+            this._initStars();
+            this.onResize();
         }
-        createStars() {
-            const numStars = this.game.config.numStars || 500;
-            this.stars = [];
-            for (let i = 0; i < numStars; i++) {
-                this.stars.push({
-                    x: (Math.random() * 2 - 1) * this.game.canvas.width * 0.35,
-                    y: (Math.random() * 2 - 1) * this.game.canvas.height * 0.35,
-                    z: Math.random() * this.game.canvas.width,
-                    speedFactor: 0.3 + Math.random() * 0.7
-                });
-            }
+        _randCenteredNorm() {
+            return (Math.random() - 0.5) * (1 + Math.random() * 0.3);
         }
-        createBackgroundStars() {
-            const total = 200;
-            this.backgroundStars = [];
-            for (let i = 0; i < total; i++) {
-                this.backgroundStars.push({
-                    x: Math.random() * this.game.canvas.width,
-                    y: Math.random() * this.game.canvas.height,
-                    size: Math.random() * 1.5 + 0.3,
-                    brightness: Math.random() * 0.6 + 0.4
-                });
-            }
+        _makeStar(isNear) {
+            const cfg = this.game.config.starfield;
+            const [minS, maxS] = isNear ? cfg.nearSpeedRange : cfg.farSpeedRange;
+            return {
+                rx: this._randCenteredNorm(),
+                ry: this._randCenteredNorm(),
+                speed: minS + Math.random() * (maxS - minS),
+                phase: Math.random(),
+                frozen: false,
+                tFreeze: 0,
+                zFreeze: 0,
+                dead: false
+            };
         }
-        drawBackgroundStars(ctx) {
-            this.backgroundStars.forEach((s) => {
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                const v = Math.floor(255 * s.brightness);
-                ctx.fillStyle = `rgb(${v},${v},${v})`;
-                ctx.fill();
-            });
-        }
-        drawStars(ctx) {
-            const focal = this.game.canvas.width;
-            const maxD = this.game.canvas.width;
-            this.stars.forEach((star) => {
-                const k = focal / star.z;
-                const px = star.x * k + this.game.canvas.width / 2;
-                const py = star.y * k + this.game.canvas.height / 2;
-                const sz = Math.max(1, (1 - star.z / maxD) * 3);
-                if (px >= 0 && px <= this.game.canvas.width && py >= 0 && py <= this.game.canvas.height) {
-                    this.drawStar(ctx, px, py, sz);
-                }
-            });
-        }
-        drawStar(ctx, px, py, size) {
-            ctx.beginPath();
-            ctx.arc(px, py, size, 0, Math.PI * 2);
-            ctx.fillStyle = "#FFF";
-            ctx.fill();
+        _initStars() {
+            const cfg = this.game.config.starfield;
+            this.farStars = Array.from({ length: cfg.numFar }, () => this._makeStar(false));
+            this.nearStars = Array.from({ length: cfg.numNear }, () => this._makeStar(true));
         }
         onResize() {
-            this.createBackgroundStars();
-            this.createStars();
+            const c = this.game.canvas;
+            this.width = c.width;
+            this.height = c.height;
+            this.centerX = this.width / 2;
+            this.centerY = this.height / 2;
+            this.zMax = Math.max(1, this.width / 2);
+            this.zMin = Math.max(0.001 * this.width, 1);
+            this.zRange = this.zMax - this.zMin;
+            this.focal = this.game.config.starfield.focalLength;
         }
-        draw(ctx, drawBackground = false) {
-            drawBackground ? this.drawBackgroundStars(ctx) : this.drawStars(ctx);
+        _zAt(star, t) {
+            const speed = star.speed * this.game.config.starfield.speedScale;
+            const u = ((t * speed + star.phase) % 1 + 1) % 1;
+            return this.zMin + (1 - u) * this.zRange;
+        }
+        _sizeAt(star, z) {
+            const base = Math.max(0.5, (0.5 - z / this.zMax) * 5);
+            const proximity = star.speed / 8;
+            const boost = proximity > 0.5 ? 1 + ((this.zMax - z) / this.zMax) * proximity : 1;
+            return Math.max(base * boost, 0.5);
+        }
+        _project(star, z) {
+            const k = this.focal / z;
+            const sx = star.rx * this.width * k + this.centerX;
+            const sy = star.ry * this.height * k + this.centerY;
+            return { sx, sy };
+        }
+        _drawSet(ctx, stars, t) {
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                const z = this._zAt(s, t);
+                const { sx, sy } = this._project(s, z);
+                if (sx >= 0 && sx < this.width && sy >= 0 && sy < this.height) {
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fill();
+                }
+            }
+        }
+        _drawSetFreezeOut(ctx, t) {
+            const margin = Math.max(this.width, this.height) * 0.1;
+            const vFactor = this.zRange;
+            for (let i = 0; i < this.nearStars.length; i++) {
+                const s = this.nearStars[i];
+                if (s.dead) continue;
+                if (!s.frozen) continue;
+                const dt = Math.max(0, t - s.tFreeze);
+                const v = s.speed * this.game.config.starfield.speedScale * vFactor;
+                let z = s.zFreeze - v * dt;
+                z = Math.max(this.zMin * 0.01, z);
+                const { sx, sy } = this._project(s, z);
+                const off =
+                    sx < -margin || sx > this.width + margin || sy < -margin || sy > this.height + margin;
+                if (off) {
+                    s.dead = true;
+                    continue;
+                }
+                ctx.beginPath();
+                ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+            }
+        }
+        drawFar(ctx) {
+            const t = this.game.elapsed || 0;
+            this._drawSet(ctx, this.farStars, t);
+        }
+        drawNear(ctx) {
+            const t = this.game.elapsed || 0;
+            if (!this.cutoffActivated) {
+                const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
+                if (t < cut) {
+                    this._drawSet(ctx, this.nearStars, t);
+                    return;
+                }
+            }
+            this._drawSetFreezeOut(ctx, t);
         }
         update() {
-            const maxD = this.game.canvas.width;
-            this.stars.forEach((star) => {
-                star.z -= this.game.shipSpeed * star.speedFactor;
-                if (star.z <= 0) {
-                    if (this.game.elapsed < this.game.config.stopSpawnTime) {
-                        star.x = (Math.random() * 2 - 1) * this.game.canvas.width * 0.35;
-                        star.y = (Math.random() * 2 - 1) * this.game.canvas.height * 0.35;
-                        star.z = maxD;
-                    } else {
-                        star.z = 0;
-                    }
+            const t = this.game.elapsed || 0;
+            const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
+            if (!this.cutoffActivated && t >= cut) {
+                this.cutoffActivated = true;
+                for (let i = 0; i < this.nearStars.length; i++) {
+                    const s = this.nearStars[i];
+                    s.frozen = true;
+                    s.tFreeze = cut;
+                    s.zFreeze = this._zAt(s, cut);
+                    s.dead = false;
                 }
-            });
+            } else if (this.cutoffActivated && t < cut) {
+                this.cutoffActivated = false;
+                for (let i = 0; i < this.nearStars.length; i++) {
+                    const s = this.nearStars[i];
+                    s.frozen = false;
+                    s.dead = false;
+                }
+            }
         }
     }
 
@@ -386,11 +421,13 @@
             const invImg = this.game.assetManager.getCloudOverlayInverted();
             const img = this.game.assetManager.getCloudOverlay();
             if (behind) {
-                if (invImg.complete)
+                if (invImg.complete) {
                     this.drawLayer(ctx, invImg, cloudsCfg.back?.alpha ?? 0.8, cloudsCfg.back?.scrollSpeed ?? 0.015, true);
+                }
             } else {
-                if (img.complete)
+                if (img.complete) {
                     this.drawLayer(ctx, img, cloudsCfg.front?.alpha ?? 0.8, cloudsCfg.front?.scrollSpeed ?? 0.03, false);
+                }
             }
         }
         update() {}
@@ -509,9 +546,7 @@
                 sizeFactor: 0.8,
                 color: "rgba(255,255,255,0.2)"
             });
-            applyAtmosphere(this.game.ctx, this.cx, this.cy, this.size / 1.9, {
-                color: "rgba(148,210,255,0.2)"
-            });
+            applyAtmosphere(this.game.ctx, this.cx, this.cy, this.size / 1.9, { color: "rgba(148,210,255,0.2)" });
         }
         update() {
             const elapsed = this.game.elapsed || 0;
@@ -595,33 +630,53 @@
     }
 
     class SpaceJourneyGame {
+        static maxSecondInConfig(obj) {
+            let m = 0;
+            function scan(o) {
+                if (!o || typeof o !== "object") return;
+                if (Array.isArray(o)) {
+                    for (const it of o) scan(it);
+                    return;
+                }
+                if (Array.isArray(o.positions)) {
+                    for (const kf of o.positions) {
+                        if (kf && typeof kf.second === "number") m = Math.max(m, kf.second);
+                    }
+                }
+                for (const v of Object.values(o)) scan(v);
+            }
+            scan(obj);
+            return m;
+        }
+        static autoExtendJourneySeconds(cfg) {
+            const maxS = SpaceJourneyGame.maxSecondInConfig(cfg);
+            if (typeof cfg.journeySeconds !== "number" || cfg.journeySeconds < maxS) {
+                cfg.journeySeconds = maxS;
+            }
+        }
         constructor() {
             this.canvas = document.getElementById("viaje");
             this.ctx = this.canvas.getContext("2d");
             this.config = CONFIG;
             this.play = false;
             this.assetManager = new AssetManager();
-            this.stars = new Stars(this);
+            this.stars = new StarField(this);
             this.sun = new Sun(this);
             this.earth = new Earth(this);
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
             this.elapsed = 0;
-            this.lastFrameTime = performance.now();
-            this.shipSpeed = this.config.starSpeed;
+            SpaceJourneyGame.autoExtendJourneySeconds(this.config);
             this.resizeCanvas();
             this.setupEvents();
             this.animate();
         }
-
         setupEvents() {
             window.addEventListener("resize", () => this.resizeCanvas());
-
             const btn = document.getElementById("music-toggle");
             const slider = document.getElementById("music-volume");
             btn.addEventListener("click", () => this.setPlay(!this.play));
             slider.addEventListener("input", (e) => this.audio.setVolume(parseFloat(e.target.value)));
-
             const controls = document.getElementById("audio-controls");
             this.timeSlider = document.createElement("input");
             this.timeSlider.type = "range";
@@ -632,7 +687,6 @@
             this.timeSlider.style.width = "300px";
             this.timeSlider.style.marginLeft = "10px";
             controls.appendChild(this.timeSlider);
-
             const onScrub = (sec) => {
                 const clamped = Math.max(0, Math.min(this.config.journeyDuration, Number(sec) || 0));
                 const a = this.audio.audio;
@@ -645,72 +699,57 @@
             };
             this.timeSlider.addEventListener("input", (e) => onScrub(e.target.value));
             this.timeSlider.addEventListener("change", (e) => onScrub(e.target.value));
-
             this.audio.audio.addEventListener("loadedmetadata", () => {
                 const a = this.audio.audio;
                 const dur = isFinite(a.duration) ? a.duration : 0;
-                const maxFromConfig = maxSecondInConfig(this.config);
+                const maxFromConfig = SpaceJourneyGame.maxSecondInConfig(this.config);
                 this.config.journeySeconds = Math.max(this.config.journeySeconds || 0, maxFromConfig, dur);
                 if (this.timeSlider) this.timeSlider.max = this.config.journeyDuration;
             });
         }
-
         syncToElapsed() {
             this.sun.syncToElapsed?.();
             this.earth.syncToElapsed?.();
         }
-
         resizeCanvas() {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.stars.onResize();
         }
-
         setPlay(next) {
             this.play = next;
-            this.lastFrameTime = performance.now();
             if (next) this.audio.play();
             else this.audio.pause();
             document.getElementById("music-toggle").textContent = next ? "Pause" : "Play";
         }
-
         drawBackground(ctx) {
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
-
         update() {
             this.sun.update();
-            this.stars.update();
             this.earth.update();
+            this.stars.update();
         }
-
         draw() {
             this.drawBackground(this.ctx);
-            this.stars.draw(this.ctx);
+            this.stars.drawFar(this.ctx);
             this.sun.draw(this.ctx);
-            this.stars.draw(this.ctx, true);
             if (this.earth.visible && this.earth.size > 0) {
                 this.earth.drawChildren(this.ctx);
             }
+            this.stars.drawNear(this.ctx);
             this.ui.drawTimer(this.ctx, this.elapsed, this.config.journeyDuration);
         }
-
         animate() {
-            this.lastFrameTime = performance.now();
-
-            // Reloj maestro = tiempo del audio
             const a = this.audio.audio;
             this.elapsed = a && typeof a.currentTime === "number" ? a.currentTime : 0;
-
             if (this.play) {
                 this.update();
             } else {
                 this.syncToElapsed();
             }
-
             if (this.timeSlider) this.timeSlider.value = this.elapsed;
-
             this.draw();
             requestAnimationFrame(() => this.animate());
         }
