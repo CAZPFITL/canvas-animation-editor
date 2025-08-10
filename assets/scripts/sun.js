@@ -1,9 +1,6 @@
-
-// Gestión del sol
 export class Sun {
-    constructor(canvas, sunRelativePos) {
-        this.canvas = canvas;
-        this.sunRelativePos = sunRelativePos;
+    constructor(game) {
+        this.game = game;
         this.x = 0;
         this.y = 0;
         this.size = 0;
@@ -11,12 +8,16 @@ export class Sun {
     }
     
     updatePosition() {
-        const minDim = Math.min(this.canvas.width, this.canvas.height);
-        this.x = this.sunRelativePos.x * this.canvas.width;
-        this.y = this.sunRelativePos.y * this.canvas.height;
+        const minDim = Math.min(this.game.canvas.width, this.game.canvas.height);
+        this.x = this.game.config.sunRelativePos.x * this.game.canvas.width;
+        this.y = this.game.config.sunRelativePos.y * this.game.canvas.height;
         this.size = minDim * 0.03;
     }
     
+    onResize() {
+        this.updatePosition();
+    }
+
     draw(ctx) {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -25,9 +26,5 @@ export class Sun {
         grad.addColorStop(1, 'rgba(255,200,50,0)');
         ctx.fillStyle = grad;
         ctx.fill();
-    }
-    
-    onResize() {
-        this.updatePosition();
     }
 }
