@@ -39,7 +39,7 @@
             stopNearAt: 90,
             numFar: 100,
             numNear: 200,
-            farSpeedRange: [0.001, 0.005],
+            farSpeedRange: [0.001, 0.0025],
             nearSpeedRange: [1.0, 5.0],
             speedScale: 0.05,
             focalLength: 128
@@ -47,17 +47,21 @@
         sun: {
             radius: 0.0008,
             keyframes: [
-                // { second: 0, pos: { x: 0, y: 0, z: 1000 } },
-                { second: 0, pos: { x: 0.0001, y: 0, z: 1.09 } },
-                // { second: 3, pos: { x: -0.0032, y: 0, z: 1 } }
+                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
+                { second: 100, pos: { x: 0, y: 0, z: 1000 } },
+                { second: 110 },
+                { second: 120, pos: { x: -0.08, y: 0, z: 1.09 } }
             ]
         },
         earth: {
             radius: 0.0008 / 109,
             scrollSpeed: 0.02,
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
-                // { second: 0, pos: { x: 0, y: 0, z: 10000 } },
+                { second: 0, pos: { x: 0, y: 0, z: 10 } },
+                { second: 119, pos: { x: 0, y: 0, z: 10 } },
+                { second: 120, pos: { x: 0, y: 0, z: 2 } },
+                { second: 174, pos: { x: 0, y: 0, z: 0.35 } },
+                { second: 220, pos: { x: 0, y: 0, z: 0.08 } }
             ],
             clouds: {
                 back: { scrollSpeed: 0.03, alpha: 0.8 },
@@ -740,11 +744,11 @@
         draw() {
             this.drawBackground(this.ctx);
             this.stars.drawFar(this.ctx);
+            this.stars.drawNear(this.ctx);
             this.sun.draw(this.ctx);
             if (this.earth.visible && this.earth.screen.r > 0) {
                 this.earth.drawChildren(this.ctx);
             }
-            this.stars.drawNear(this.ctx);
             this.ui.drawTimer(this.ctx, this.elapsed, this.config.journeyDuration);
         }
         animate() {
