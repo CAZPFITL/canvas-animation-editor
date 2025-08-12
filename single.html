@@ -57,14 +57,15 @@
             radius: 0.0008 / 109,
             scrollSpeed: 0.02,
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 10 } },
-                { second: 119, pos: { x: 0, y: 0, z: 10 } },
-                { second: 120, pos: { x: 0, y: 0, z: 2 } },
-                { second: 170, pos: { x: 0, y: 0, z: 0.3 } },
-                { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
-                { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
-                { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
-                { second: 285, pos: { x: 0, y: 0, z: 0.012 } }
+                { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
+                // { second: 0, pos: { x: 0, y: 0, z: 10 } },
+                // { second: 119, pos: { x: 0, y: 0, z: 10 } },
+                // { second: 120, pos: { x: 0, y: 0, z: 2 } },
+                // { second: 170, pos: { x: 0, y: 0, z: 0.3 } },
+                // { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
+                // { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
+                // { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
+                // { second: 285, pos: { x: 0, y: 0, z: 0.012 } }
             ],
             clouds: {
                 back: { scrollSpeed: 0.03, alpha: 0.8 },
@@ -393,7 +394,7 @@
             if (!img.complete || !earth.visible || earth.screen.r <= 0) return;
             ctx.save();
             ctx.beginPath();
-            ctx.arc(earth.screen.x, earth.screen.y, earth.screen.r / 1.95, 0, Math.PI * 2);
+            ctx.arc(earth.screen.x, earth.screen.y, earth.screen.r / 0.98, 0, Math.PI * 2);
             ctx.clip();
             ctx.globalAlpha = alpha;
             const tilt = (this.game.config.earthTiltDeg || 0) * (Math.PI / 180);
@@ -549,19 +550,19 @@
             const baseY = 0.2;
             const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
             const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
-            applyLighting(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 1.05, {
+            applyLighting(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96, {
                 offsetX: offX,
                 offsetY: offY,
                 innerColor: "rgba(255,255,255,0.1)",
                 outerColor: "rgba(80,80,80,0.08)"
             });
-            applySpecularHighlight(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 1.05, {
+            applySpecularHighlight(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96, {
                 offsetX: offX,
                 offsetY: offY,
                 sizeFactor: 0.8,
                 color: "rgba(255,255,255,0.2)"
             });
-            applyAtmosphere(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 1.05, {
+            applyAtmosphere(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96   , {
                 color: "rgba(148,210,255,0.2)"
             });
         }
