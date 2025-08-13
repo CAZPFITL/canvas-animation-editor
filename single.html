@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Viaje espacial a la Tierra</title>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Star Fields</title>
     <style>
-        html, body {
+        html,
+        body {
             margin: 0;
             height: 100%;
-            background-color: #000; /* fondo oscuro para el espacio */
+            background-color: #000;
             overflow: hidden;
         }
-
-        /* El canvas ocupa toda la ventana y forzamos pixel art */
         #viaje {
             display: block;
             width: 100%;
@@ -24,93 +23,117 @@
 </head>
 <body>
 <canvas id="viaje"></canvas>
-<div id="audio-controls" style="position:fixed; left:10px; top:60px; z-index:10; color:#fff; font:16px monospace;">
+<div
+        id="audio-controls"
+        style="position: fixed; left: 10px; top: 60px; z-index: 10; color: #fff; font: 16px monospace"
+>
     <button id="music-toggle">Play</button>
-    <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5">
+    <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
 </div>
+
 <script>
     const CONFIG = {
-        journeyMinutes: 2,
-        stopStarsMinute: 1.5,
-        starSpeed: 20,
+        journeySeconds: 285,
+        camera: { focal: 600 },
+        starfield: {
+            stopNearAt: 90,
+            numFar: 100,
+            numNear: 200,
+            farSpeedRange: [0.001, 0.0025],
+            nearSpeedRange: [1.0, 5.0],
+            speedScale: 0.05,
+            focalLength: 128
+        },
         sun: {
-            appearMinute: 0,
-            growStartMinute: 0,
-            growEndMinute: 3.0,
-            initialSize: 1 / 500,
-            finalSize: 1 / 100,
-            positions: [
-                {minute: 0.0, pos: {x: 0.5, y: 0.5}},
-                {minute: 0.5, pos: {x: 0, y: 0}},
-                // {minute: 1.8, pos: {x: 0.5, y: 0.5}},
-                // {minute: 3, pos: {x: 0, y: 0.5}}
+            radius: 0.0008,
+            color: '#ffcc00',
+            keyframes: [
+                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
+                { second: 100, pos: { x: 0, y: 0, z: 1000 } },
+                { second: 110 },
+                { second: 120, pos: { x: -0.012, y: 0, z: 1.09 } }
+            ]
+        },
+        mars: {
+            radius: 0.0008 / 2,
+            color: '#b75741',
+            keyframes: [
+                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
+                { second: 105, pos: { x: 0, y: 0, z: 1000 } },
+                { second: 118, pos: { x: -0.05, y: 0, z: 2 } }
+            ]
+        },
+        jupiter: {
+            radius: 0.0008,
+            color: '#b6f300',
+            keyframes: [
+                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
+                { second: 105, pos: { x: 0, y: 0, z: 1000 } },
+                { second: 120, pos: { x: -0.3, y: 0, z: 4 } }
             ]
         },
         earth: {
-            appearMinute: 0.0,
-            growStartMinute: 0.0,
-            growEndMinute: 0.5,
-            initialSize: 1 / 100,
-            finalSize: 1 / 3,
-            positions: [
-                {minute: 0, pos: {x: 0.5, y: 0.5}},
-                {minute: 0.5, pos: {x: 0.8, y: 0.8}},
-            ]
+            radius: 0.0008 / 109,
+            scrollSpeed: 0.02,
+            keyframes: [
+                // { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
+                { second: 0, pos: { x: 0, y: 0, z: 10 } },
+                { second: 110, pos: { x: 0, y: 0, z: 10 } },
+                { second: 120, pos: { x: 0, y: 0, z: 0.5 } },
+                { second: 150, pos: { x: 0, y: 0, z: 0.2 } },
+                { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
+                { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
+                { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
+                { second: 285, pos: { x: 0, y: 0, z: 0.012 } }
+            ],
+            clouds: {
+                back: { scrollSpeed: 0.03, alpha: 0.8 },
+                front: { scrollSpeed: 0.03, alpha: 0.5 }
+            },
+            moon: { initialAngle: -1.75, angularVelocity: 0.06, scrollSpeed: 0.01 }
         },
-        // Parámetros de sprites y animaciones
-        totalEarthFrames: 8000,
-        framesPerEarthUpdate: 1,
-        totalMoonFrames: 6000,
-        framesPerMoonUpdate: 1,
-        totalCloudFrames: 6500,
-        framesPerCloudsUpdate: 1,
-        // Número de estrellas
-        numStars: 500,
-        // Inclinación de la Tierra
         earthTiltDeg: 4,
-        // Ángulo inicial de la órbita de la Luna
-        moonAngle: -100,
-        // Devuelve la duración total del viaje en milisegundos
         get journeyDuration() {
-            return this.journeyMinutes * 60 * 1000;
-        },
-        // Calcula el instante en milisegundos en el que aparece la Tierra
-        get earthAppearTime() {
-            return this.earth.appearMinute * 60 * 1000;
-        },
-        // Tiempo en milisegundos a partir del cual dejan de generarse estrellas
-        get stopSpawnTime() {
-            return (this.stopStarsMinute != null)
-                ? this.stopStarsMinute * 60 * 1000
-                : this.earthAppearTime - 10000;
-        },
+            return this.journeySeconds ?? 0;
+        }
     };
 
-    /**
-     * Iluminación difusa simple (sombra tipo Phong básico)
-     */
+    function interpolateVec3(elapsed, keyframes, fallback = { x: 0, y: 0, z: 5 }) {
+        const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
+        if (!withPos.length) return fallback;
+        withPos.sort((a, b) => a.second - b.second);
+        if (elapsed <= withPos[0].second) return withPos[0].pos;
+        if (elapsed >= withPos[withPos.length - 1].second) return withPos[withPos.length - 1].pos;
+        for (let i = 0; i < withPos.length - 1; i++) {
+            const k1 = withPos[i];
+            const k2 = withPos[i + 1];
+            if (elapsed >= k1.second && elapsed <= k2.second) {
+                const t = (elapsed - k1.second) / (k2.second - k1.second || 1);
+                return {
+                    x: k1.pos.x + (k2.pos.x - k1.pos.x) * t,
+                    y: k1.pos.y + (k2.pos.y - k1.pos.y) * t,
+                    z: k1.pos.z + (k2.pos.z - k1.pos.z) * t
+                };
+            }
+        }
+        return withPos[withPos.length - 1].pos;
+    }
+
     function applyLighting(ctx, cx, cy, radius, options = {}) {
         const {
             offsetX = 0.5,
             offsetY = -0.5,
-            innerColor = 'rgba(255,255,255,0.9)',
-            outerColor = 'rgba(0,0,0,0.3)',
+            innerColor = "rgba(255,255,255,0.9)",
+            outerColor = "rgba(0,0,0,0.3)",
             innerRadiusFactor = 0.1
         } = options;
-
         ctx.save();
-        ctx.globalCompositeOperation = 'multiply';
-
+        ctx.globalCompositeOperation = "multiply";
         const lightX = cx + radius * offsetX;
         const lightY = cy + radius * offsetY;
-
-        const shade = ctx.createRadialGradient(
-            lightX, lightY, radius * innerRadiusFactor,
-            cx, cy, radius
-        );
+        const shade = ctx.createRadialGradient(lightX, lightY, radius * innerRadiusFactor, cx, cy, radius);
         shade.addColorStop(0, innerColor);
         shade.addColorStop(1, outerColor);
-
         ctx.fillStyle = shade;
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -118,30 +141,15 @@
         ctx.restore();
     }
 
-    /**
-     * Brillo especular (punto brillante del sol sobre la superficie)
-     */
     function applySpecularHighlight(ctx, cx, cy, radius, options = {}) {
-        const {
-            offsetX = 0.5,
-            offsetY = -0.5,
-            sizeFactor = 0.3,
-            color = 'rgba(255,255,255,0.6)'
-        } = options;
-
+        const { offsetX = 0.5, offsetY = -0.5, sizeFactor = 0.3, color = "rgba(255,255,255,0.6)" } = options;
         const lightX = cx + radius * offsetX;
         const lightY = cy + radius * offsetY;
-
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-
-        const spec = ctx.createRadialGradient(
-            lightX, lightY, 0,
-            lightX, lightY, radius * sizeFactor
-        );
+        ctx.globalCompositeOperation = "lighter";
+        const spec = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, radius * sizeFactor);
         spec.addColorStop(0, color);
-        spec.addColorStop(1, 'rgba(255,255,255,0)');
-
+        spec.addColorStop(1, "rgba(255,255,255,0)");
         ctx.fillStyle = spec;
         ctx.beginPath();
         ctx.arc(lightX, lightY, radius * sizeFactor, 0, Math.PI * 2);
@@ -149,26 +157,13 @@
         ctx.restore();
     }
 
-    /**
-     * Atmósfera (halo alrededor del planeta)
-     */
     function applyAtmosphere(ctx, cx, cy, radius, options = {}) {
-        const {
-            color = 'rgba(0,150,255,0.2)',
-            innerAlpha = 0.0,
-            outerAlpha = 0.2
-        } = options;
-
+        const { color = "rgba(0,150,255,0.2)", innerAlpha = 0.0 } = options;
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-
-        const atm = ctx.createRadialGradient(
-            cx, cy, radius * 0.9,
-            cx, cy, radius
-        );
+        ctx.globalCompositeOperation = "lighter";
+        const atm = ctx.createRadialGradient(cx, cy, radius * 0.9, cx, cy, radius);
         atm.addColorStop(0, `rgba(0,150,255,${innerAlpha})`);
         atm.addColorStop(1, color);
-
         ctx.fillStyle = atm;
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -177,386 +172,437 @@
     }
 
     class AssetManager {
-        earthUrl = './assets/img/earth.png'
-        cloudUrl = './assets/img/cloud.png'
-        cloudInvertedUrl = './assets/img/cloud2.png'
-        moonUrl = './assets/img/moon.png'
-        songUrl = './assets/audio/song.m4a'
-
+        earthUrl = "./assets/img/earth.png";
+        cloudUrl = "./assets/img/cloud.png";
+        cloudInvertedUrl = "./assets/img/cloud2.png";
+        moonUrl = "./assets/img/moon.png";
+        songUrl = "./assets/audio/song.m4a";
         constructor() {
             this.earthSprite = new Image();
             this.cloudOverlay = new Image();
             this.cloudOverlayInverted = new Image();
             this.moonOverlay = new Image();
             this.song = new Audio();
-
             this.loadAssets();
         }
-
         loadAssets() {
             this.earthSprite.src = this.earthUrl;
             this.cloudOverlay.src = this.cloudUrl;
             this.cloudOverlayInverted.src = this.cloudInvertedUrl;
             this.moonOverlay.src = this.moonUrl;
-
             this.song.src = this.songUrl;
             this.song.loop = true;
-            this.song.preload = 'auto';
+            this.song.preload = "auto";
             this.song.volume = 0.5;
         }
-
         getEarthSprite() {
             return this.earthSprite;
         }
-/**/
         getCloudOverlay() {
             return this.cloudOverlay;
         }
-
         getCloudOverlayInverted() {
             return this.cloudOverlayInverted;
         }
-
         getMoonOverlay() {
             return this.moonOverlay;
         }
-
         getSong() {
             return this.song;
         }
     }
 
-    class Stars {
+    class Camera {
         constructor(game) {
             this.game = game;
-            this.stars = [];
-            this.backgroundStars = [];
-            this.createStars();
-            this.createBackgroundStars();
+            this.focal = game.config.camera?.focal ?? 600;
+            this.cx = 0;
+            this.cy = 0;
+            this.minDim = 1;
         }
-
-        createStars() {
-            const numStars = 500;
-            this.stars = [];
-            for (let i = 0; i < numStars; i++) {
-                this.stars.push({
-                    x: (Math.random() * 2 - 1) * this.game.canvas.width * 0.35,
-                    y: (Math.random() * 2 - 1) * this.game.canvas.height * 0.35,
-                    z: Math.random() * this.game.canvas.width,
-                    speedFactor: 0.3 + Math.random() * 0.7
-                });
-            }
-        }
-
-        createBackgroundStars() {
-            const total = 200;
-            this.backgroundStars = [];
-            for (let i = 0; i < total; i++) {
-                this.backgroundStars.push({
-                    x: Math.random() * this.game.canvas.width,
-                    y: Math.random() * this.game.canvas.height,
-                    size: Math.random() * 1.5 + 0.3,
-                    brightness: Math.random() * 0.6 + 0.4
-                });
-            }
-        }
-
-        drawBackgroundStars(ctx) {
-            this.backgroundStars.forEach(s => {
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                const v = Math.floor(255 * s.brightness);
-                ctx.fillStyle = `rgb(${v},${v},${v})`;
-                ctx.fill();
-            });
-        }
-
-        drawStars(ctx) {
-            const focal = this.game.canvas.width;
-            const maxD = this.game.canvas.width;
-
-            this.stars.forEach(star => {
-                const k = focal / star.z;
-                const px = star.x * k + this.game.canvas.width / 2;
-                const py = star.y * k + this.game.canvas.height / 2;
-                const sz = Math.max(1, (1 - star.z / maxD) * 3);
-                if (px >= 0 && px <= this.game.canvas.width && py >= 0 && py <= this.game.canvas.height) {
-                    this.drawStar(ctx, px, py, sz);
-                }
-            });
-        }
-
-        drawStar(ctx, px, py, size) {
-            ctx.beginPath();
-            ctx.arc(px, py, size, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFF';
-            ctx.fill();
-        }
-
         onResize() {
-            this.createBackgroundStars();
-            this.createStars();
+            const c = this.game.canvas;
+            this.cx = c.width / 2;
+            this.cy = c.height / 2;
+            this.minDim = Math.min(c.width, c.height);
+            this.focal = this.game.config.camera?.focal ?? 600;
         }
-
-        draw(ctx, drawBackground = false) {
-            (drawBackground) ? this.drawBackgroundStars(ctx) : this.drawStars(ctx);
-        }
-
-        update() {
-            const maxD = this.game.canvas.width;
-
-            this.stars.forEach(star => {
-                // La velocidad de las estrellas depende de starSpeed, no de la nave
-                star.z -= this.game.shipSpeed * star.speedFactor;
-                if (star.z <= 0) {
-                    if (this.game.elapsed < this.game.config.stopSpawnTime) {
-                        star.x = (Math.random() * 2 - 1) * this.game.canvas.width * 0.35;
-                        star.y = (Math.random() * 2 - 1) * this.game.canvas.height * 0.35;
-                        star.z = maxD;
-                    } else {
-                        star.z = 0;
-                    }
-                }
-            });
+        project(pos) {
+            const z = Math.max(pos.z, 0.001);
+            const k = (this.minDim * this.focal) / z;
+            return { x: this.cx + pos.x * k, y: this.cy + pos.y * k, k };
         }
     }
 
-    class Sun {
+    class StarField {
         constructor(game) {
             this.game = game;
-            this.x = 0;
-            this.y = 0;
-            this.size = 0;
-            this.visible = false;
+            this.farStars = [];
+            this.nearStars = [];
+            this.width = 1;
+            this.height = 1;
+            this.centerX = 0.5;
+            this.centerY = 0.5;
+            this.focal = CONFIG.starfield.focalLength;
+            this.cutoffActivated = false;
+            this._initStars();
+            this.onResize();
         }
-
+        _randCenteredNorm() {
+            return (Math.random() - 0.5) * (1 + Math.random() * 0.3);
+        }
+        _makeStar(isNear) {
+            const cfg = this.game.config.starfield;
+            const [minS, maxS] = isNear ? cfg.nearSpeedRange : cfg.farSpeedRange;
+            return {
+                rx: this._randCenteredNorm(),
+                ry: this._randCenteredNorm(),
+                speed: minS + Math.random() * (maxS - minS),
+                phase: Math.random(),
+                frozen: false,
+                tFreeze: 0,
+                zFreeze: 0,
+                dead: false
+            };
+        }
+        _initStars() {
+            const cfg = this.game.config.starfield;
+            this.farStars = Array.from({ length: cfg.numFar }, () => this._makeStar(false));
+            this.nearStars = Array.from({ length: cfg.numNear }, () => this._makeStar(true));
+        }
         onResize() {
-            // Las posiciones y tamaños se recalculan en update() cada frame
+            const c = this.game.canvas;
+            this.width = c.width;
+            this.height = c.height;
+            this.centerX = this.width / 2;
+            this.centerY = this.height / 2;
+            this.zMax = Math.max(1, this.width / 2);
+            this.zMin = Math.max(0.001 * this.width, 1);
+            this.zRange = this.zMax - this.zMin;
+            this.focal = this.game.config.starfield.focalLength;
         }
+        _zAt(star, t) {
+            const speed = star.speed * this.game.config.starfield.speedScale;
+            const u = ((t * speed + star.phase) % 1 + 1) % 1;
+            return this.zMin + (1 - u) * this.zRange;
+        }
+        _sizeAt(star, z) {
+            const base = Math.max(0.5, (0.5 - z / this.zMax) * 5);
+            const proximity = star.speed / 8;
+            const boost = proximity > 0.5 ? 1 + ((this.zMax - z) / this.zMax) * proximity : 1;
+            return Math.max(base * boost, 0.5);
+        }
+        _project(star, z) {
+            const k = this.focal / z;
+            const sx = star.rx * this.width * k + this.centerX;
+            const sy = star.ry * this.height * k + this.centerY;
+            return { sx, sy };
+        }
+        _drawSet(ctx, stars, t) {
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                const z = this._zAt(s, t);
+                const { sx, sy } = this._project(s, z);
+                if (sx >= 0 && sx < this.width && sy >= 0 && sy < this.height) {
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fill();
+                }
+            }
+        }
+        _drawSetFreezeOut(ctx, t) {
+            const margin = Math.max(this.width, this.height) * 0.1;
+            const vFactor = this.zRange;
+            for (let i = 0; i < this.nearStars.length; i++) {
+                const s = this.nearStars[i];
+                if (s.dead) continue;
+                if (!s.frozen) continue;
+                const dt = Math.max(0, t - s.tFreeze);
+                const v = s.speed * this.game.config.starfield.speedScale * vFactor;
+                let z = s.zFreeze - v * dt;
+                z = Math.max(this.zMin * 0.01, z);
+                const { sx, sy } = this._project(s, z);
+                const off = sx < -margin || sx > this.width + margin || sy < -margin || sy > this.height + margin;
+                if (off) {
+                    s.dead = true;
+                    continue;
+                }
+                ctx.beginPath();
+                ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffff";
+                ctx.fill();
+            }
+        }
+        drawFar(ctx) {
+            const t = this.game.elapsed || 0;
+            this._drawSet(ctx, this.farStars, t);
+        }
+        drawNear(ctx) {
+            const t = this.game.elapsed || 0;
+            if (!this.cutoffActivated) {
+                const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
+                if (t < cut) {
+                    this._drawSet(ctx, this.nearStars, t);
+                    return;
+                }
+            }
+            this._drawSetFreezeOut(ctx, t);
+        }
+        update() {
+            const t = this.game.elapsed || 0;
+            const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
+            if (!this.cutoffActivated && t >= cut) {
+                this.cutoffActivated = true;
+                for (let i = 0; i < this.nearStars.length; i++) {
+                    const s = this.nearStars[i];
+                    s.frozen = true;
+                    s.tFreeze = cut;
+                    s.zFreeze = this._zAt(s, cut);
+                    s.dead = false;
+                }
+            } else if (this.cutoffActivated && t < cut) {
+                this.cutoffActivated = false;
+                for (let i = 0; i < this.nearStars.length; i++) {
+                    const s = this.nearStars[i];
+                    s.frozen = false;
+                    s.dead = false;
+                }
+            }
+        }
+    }
 
+    class CelestialBody {
+        constructor(game, name) {
+            this.game = game;
+            this.visible = false;
+            this.worldPos = { x: 0, y: 0, z: 5 };
+            this.name = name;
+            this.color = game.config[name].color ?? '#ff00ff';
+            this.worldR = game.config[name].radius ?? 0.001;
+            this.screen = { x: 0, y: 0, r: 0 };
+        }
         draw(ctx) {
             if (!this.visible) return;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'yellow'; // Color sólido
+            ctx.arc(this.screen.x, this.screen.y, this.screen.r, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
             ctx.fill();
-
         }
-
         update() {
-            const elapsed = this.game.elapsed || 0;
-            const cfg = this.game.config.sun;
-            const canvasW = this.game.canvas.width;
-            const canvasH = this.game.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
-
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            // Visibilidad
-            if (elapsed < appearTime) {
-                this.visible = false;
-                return;
-            }
-            this.visible = true;
-
-            // Tamaño (radio) con interpolación
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
-            } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
-            }
-            this.size = minDim * sizeFactor;
-
-            // Posición relativa (interpolada)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                // Si el tiempo es anterior al primer punto, tomar el primero
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
-                    // Buscar segmento donde cae el tiempo
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
-                }
-            }
-            // Posición por defecto si no hay lista de posiciones
-            if (!relPos) {
-                const fallback = this.game.config.sunRelativePos || {x: 0.05, y: 0.5};
-                relPos = fallback;
-            }
-            this.x = relPos.x * canvasW;
-            this.y = relPos.y * canvasH;
+            const t = this.game.elapsed || 0;
+            const kf = this.game.config[this.name].keyframes;
+            const pos = interpolateVec3(t, kf, { x: 0, y: 0, z: 5 });
+            this.worldPos = pos;
+            const proj = this.game.camera.project(pos);
+            this.screen.x = proj.x;
+            this.screen.y = proj.y;
+            this.screen.r = Math.max(0, this.worldR * proj.k);
+            this.visible = this.screen.r > 0;
+        }
+        syncToElapsed() {
+            this.update();
         }
     }
 
-    class Earth {
-        constructor(game) {
+    class Clouds {
+        constructor(game, earthRef) {
             this.game = game;
-            this.earthFrameIndex = 0;
-            this.frameCounter = 0;
+            this.earthRef = earthRef;
         }
-
-        draw(ctx) {
-            const earthImg = this.game.assetManager.getEarthSprite();
-            if (earthImg.complete) {
-                ctx.save();
-
-                ctx.imageSmoothingEnabled = false;
-                ctx.imageSmoothingQuality = 'low';
-
-                // clip circular
-                ctx.beginPath();
-                ctx.arc(this.cx, this.cy, this.game.boxSize / 2, 0, Math.PI * 2);
-                ctx.clip();
-
-                const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-                ctx.translate(this.cx, this.cy);
-                ctx.rotate(tilt);
-
-                // escala para altura = boxSize
-                const scale = this.game.boxSize / earthImg.naturalHeight;
-                const overlayW = earthImg.naturalWidth * scale;
-                const overlayH = this.game.boxSize;
-
-                // origen centrado
-                const xOrigin = -overlayW / 2;
-                const yOrigin = -overlayH / 2;
-
-                // offset animado hacia la derecha + wrap
-                let totalOffset = (this.earthFrameIndex / this.game.config.totalEarthFrames) * overlayW;
-                totalOffset = ((totalOffset % overlayW) + overlayW) % overlayW;
-
-                // dos repeticiones
-                const x1 = xOrigin + totalOffset;
-                const x2 = x1 - overlayW;
-
-                ctx.drawImage(earthImg, x1, yOrigin, overlayW, overlayH);
-                ctx.drawImage(earthImg, x2, yOrigin, overlayW, overlayH);
-
-                ctx.restore();
-
-                const baseX = -0.2, baseY = 0.2;
-                const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
-                const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
-
-                applyLighting(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
-                    offsetX: offX,
-                    offsetY: offY,
-                    innerColor: 'rgba(255,255,255,0.1)',
-                    outerColor: 'rgba(80,80,80,0.08)'
-                });
-
-                applySpecularHighlight(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
-                    offsetX: offX,
-                    offsetY: offY,
-                    sizeFactor: 0.8,
-                    color: 'rgba(255,255,255,0.2)'
-                });
-
-                applyAtmosphere(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.95, {
-                    color: 'rgba(148,210,255,0.2)'
-                });
-            }
+        drawLayer(ctx, img, alpha, cyclesPerSec, invert) {
+            const earth = this.earthRef;
+            if (!img.complete || !earth.visible || earth.screen.r <= 0) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(earth.screen.x, earth.screen.y, earth.screen.r / 0.98, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.globalAlpha = alpha;
+            const tilt = (this.game.config.earthTiltDeg || 0) * (Math.PI / 180);
+            ctx.translate(earth.screen.x, earth.screen.y);
+            ctx.rotate(tilt);
+            ctx.imageSmoothingEnabled = false;
+            ctx.imageSmoothingQuality = "low";
+            const diameter = earth.screen.r * 2;
+            const scale = diameter / img.naturalHeight;
+            const overlayW = img.naturalWidth * scale;
+            const overlayH = diameter;
+            const xOrigin = -overlayW / 2;
+            const yOrigin = -overlayH / 2;
+            const cycles = ((this.game.elapsed || 0) * (cyclesPerSec || 0)) % 1;
+            const rawOffset = (invert ? -cycles : cycles) * overlayW;
+            const offsetPx = ((rawOffset % overlayW) + overlayW) % overlayW;
+            const x2 = xOrigin + offsetPx;
+            const x1 = x2 - overlayW;
+            ctx.drawImage(img, x1, yOrigin, overlayW + 1, overlayH);
+            ctx.drawImage(img, x2, yOrigin, overlayW + 1, overlayH);
+            ctx.restore();
         }
-
-        update() {
-            this.frameCounter++;
-            if (this.frameCounter >= this.game.config.framesPerEarthUpdate) {
-                this.frameCounter = 0;
-                this.earthFrameIndex = (this.earthFrameIndex + 1) % this.game.config.totalEarthFrames;
-            }
-
-            // Array Positions updates
-            const elapsed = this.game.elapsed || 0;
-            const cfg = this.game.config.earth;
-            const canvasW = this.game.canvas.width;
-            const canvasH = this.game.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
-
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            if (elapsed < appearTime) {
-                this.game.earthVisible = false;
-                this.game.boxSize = 0;
-                return;
-            }
-            this.game.earthVisible = true;
-
-            // Tamaño de la Tierra (diámetro)
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
+        draw(ctx, behind = false) {
+            const cloudsCfg = this.game.config.earth.clouds || {};
+            const invImg = this.game.assetManager.getCloudOverlayInverted();
+            const img = this.game.assetManager.getCloudOverlay();
+            if (behind) {
+                if (invImg.complete) {
+                    this.drawLayer(ctx, invImg, cloudsCfg.back?.alpha ?? 0.8, cloudsCfg.back?.scrollSpeed ?? 0.015, true);
+                }
             } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
-            }
-            this.game.boxSize = minDim * sizeFactor;
-
-            // Posición relativa (centro de la Tierra)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
+                if (img.complete) {
+                    this.drawLayer(ctx, img, cloudsCfg.front?.alpha ?? 0.8, cloudsCfg.front?.scrollSpeed ?? 0.03, false);
                 }
             }
-            if (!relPos) {
-                // Posición por defecto en el centro
-                relPos = {x: 0.5, y: 0.5};
-            }
+        }
+        update() {}
+        syncToElapsed() {
+            this.update();
+        }
+    }
 
-            this.cx = relPos.x * canvasW;
-            this.cy = relPos.y * canvasH;
-            this.game.dx = this.cx - this.game.boxSize / 2;
-            this.game.dy = this.cy - this.game.boxSize / 2;
+    class Moon {
+        constructor(game, earthRef) {
+            this.game = game;
+            this.earthRef = earthRef;
+            this.worldPos = { x: 0, y: 0, z: 5 };
+            this.worldR = 0;
+            this.screen = { x: 0, y: 0, r: 0 };
+        }
+        drawMoonOverlay(ctx, img, cx, cy, moonSize, cycles) {
+            if (!img.complete) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, moonSize / 2, 0, Math.PI * 2);
+            ctx.clip();
+            const scale = moonSize / img.naturalHeight;
+            const overlayW = img.naturalWidth * scale;
+            const overlayH = moonSize;
+            const xOrigin = cx - overlayW / 2;
+            const yOrigin = cy - overlayH / 2;
+            const offsetPx = (cycles % 1) * overlayW;
+            ctx.drawImage(img, xOrigin + offsetPx, yOrigin, overlayW, overlayH);
+            ctx.drawImage(img, xOrigin + offsetPx - overlayW, yOrigin, overlayW, overlayH);
+            ctx.restore();
+        }
+        draw(ctx, behind = false) {
+            const earth = this.earthRef;
+            if (!earth.visible || earth.screen.r <= 0) return;
+            const cfg = this.game.config.earth.moon || {};
+            const elapsed = this.game.elapsed || 0;
+            const angle = (cfg.initialAngle ?? -1.75) + (cfg.angularVelocity ?? 0.06) * elapsed;
+            const orbit = earth.worldR * 1.6;
+            const mx = earth.worldPos.x + Math.sin(angle) * orbit;
+            const my = earth.worldPos.y + Math.cos(angle) * orbit * 0.3;
+            const mz = earth.worldPos.z;
+            this.worldPos = { x: mx, y: my, z: mz };
+            this.worldR = earth.worldR * 0.15;
+            const proj = this.game.camera.project(this.worldPos);
+            this.screen.x = proj.x;
+            this.screen.y = proj.y;
+            this.screen.r = Math.max(0, this.worldR * proj.k);
+            const depth = Math.cos(angle);
+            const isBehind = depth < 0;
+            if (behind === isBehind) {
+                const cycles = ((cfg.scrollSpeed ?? 0.5) * elapsed) % 1;
+                this.drawMoonOverlay(
+                    this.game.ctx,
+                    this.game.assetManager.getMoonOverlay(),
+                    this.screen.x,
+                    this.screen.y,
+                    this.screen.r * 2,
+                    cycles
+                );
+                const moonArgs = [this.game.ctx, this.screen.x, this.screen.y, this.screen.r];
+                applyLighting(...moonArgs, {
+                    offsetX: 0,
+                    offsetY: 0,
+                    innerColor: behind ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.2)",
+                    outerColor: "rgba(80,80,80,0.1)"
+                });
+                applySpecularHighlight(...moonArgs, {
+                    offsetX: -0.2,
+                    offsetY: 0.2,
+                    sizeFactor: 0.8,
+                    color: behind ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.1)"
+                });
+            }
+        }
+        update() {}
+        syncToElapsed() {
+            this.update();
+        }
+    }
+
+    class Earth extends CelestialBody {
+        constructor(game) {
+            super(game, 'earth');
+            this.game = game;
+            this.visible = false;
+            this.worldPos = { x: 0, y: 0, z: 6 };
+            this.worldR = game.config.earth.radius ?? 0.002;
+            this.screen = { x: 0, y: 0, r: 0 };
+            this.moon = new Moon(game, this);
+            this.clouds = new Clouds(game, this);
+        }
+        draw(ctx) {
+            if (!this.visible || this.screen.r <= 0) return;
+            const earthImg = this.game.assetManager.getEarthSprite();
+            if (!earthImg.complete) return;
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            ctx.imageSmoothingQuality = "low";
+            ctx.beginPath();
+            ctx.arc(this.screen.x, this.screen.y, this.screen.r, 0, Math.PI * 2);
+            ctx.clip();
+            const tilt = (this.game.config.earthTiltDeg || 0) * (Math.PI / 180);
+            ctx.translate(this.screen.x, this.screen.y);
+            ctx.rotate(tilt);
+            const diameter = this.screen.r * 2;
+            const scale = diameter / earthImg.naturalHeight;
+            const overlayW = earthImg.naturalWidth * scale;
+            const overlayH = diameter;
+            const xOrigin = -overlayW / 2;
+            const yOrigin = -overlayH / 2;
+            const cycles = ((this.game.config.earth.scrollSpeed ?? 0) * (this.game.elapsed || 0)) % 1;
+            const offsetPx = (cycles % 1) * overlayW;
+            const x1 = xOrigin + offsetPx;
+            const x2 = x1 - overlayW;
+            ctx.drawImage(earthImg, x1, yOrigin, overlayW, overlayH);
+            ctx.drawImage(earthImg, x2, yOrigin, overlayW, overlayH);
+            ctx.restore();
+            const baseX = -0.2;
+            const baseY = 0.2;
+            const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
+            const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
+            applyLighting(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96, {
+                offsetX: offX,
+                offsetY: offY,
+                innerColor: "rgba(255,255,255,0.1)",
+                outerColor: "rgba(80,80,80,0.08)"
+            });
+            applySpecularHighlight(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96, {
+                offsetX: offX,
+                offsetY: offY,
+                sizeFactor: 0.8,
+                color: "rgba(255,255,255,0.2)"
+            });
+            applyAtmosphere(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96   , {
+                color: "rgba(148,210,255,0.2)"
+            });
+        }
+
+        drawChildren(ctx) {
+            if (!this.visible || this.screen.r <= 0) return;
+            this.moon.draw(ctx, true);
+            this.clouds.draw(ctx, true);
+            this.draw(ctx);
+            this.clouds.draw(ctx, false);
+            this.moon.draw(ctx, false);
+        }
+        syncToElapsed() {
+            this.update();
+            this.moon.update();
+            this.clouds.update();
+            this.moon.syncToElapsed();
+            this.clouds.syncToElapsed();
         }
     }
 
@@ -567,21 +613,17 @@
             this.isPlaying = false;
             this.setVolume(0.5);
         }
-
         play() {
             this.audio.play();
             this.isPlaying = true;
         }
-
         pause() {
             this.audio.pause();
             this.isPlaying = false;
         }
-
         toggle() {
             this.isPlaying ? this.pause() : this.play();
         }
-
         setVolume(v) {
             this.audio.volume = Math.max(0, Math.min(1, v));
         }
@@ -592,301 +634,164 @@
             this.canvas = game.canvas;
             this.game = game;
         }
-
-        drawTimer(ctx, elapsed, journeyDuration) {
-            ctx.fillStyle = '#FFF';
-            ctx.font = '16px monospace';
-            const secs = Math.floor(elapsed / 1000);
+        drawTimer(ctx, elapsedSec, totalSec) {
+            ctx.fillStyle = "#FFF";
+            ctx.font = "16px monospace";
+            const secs = Math.floor(elapsedSec);
             const mins = Math.floor(secs / 60);
             const rsec = secs % 60;
-            const totSec = Math.floor(journeyDuration / 1000);
-            const totMin = Math.floor(totSec / 60);
-            const rTotSec = totSec % 60;
-            const fmt = n => n < 10 ? '0' + n : '' + n;
-            ctx.fillText(`${fmt(mins)}:${fmt(rsec)} / ${fmt(totMin)}:${fmt(rTotSec)}`, 10, 25);
+            const tsec = Math.floor(totalSec);
+            const tmin = Math.floor(tsec / 60);
+            const trsec = tsec % 60;
+            const fmt = (n) => (n < 10 ? "0" + n : "" + n);
+            ctx.fillText(`${fmt(mins)}:${fmt(rsec)} / ${fmt(tmin)}:${fmt(trsec)}`, 10, 25);
         }
-
         drawSpeed(ctx, speed) {
-            ctx.fillStyle = '#FFF';
-            ctx.font = '16px monospace';
+            ctx.fillStyle = "#FFF";
+            ctx.font = "16px monospace";
             ctx.fillText(`Speed: ${speed.toFixed(2)}`, 10, 45);
         }
     }
 
-    class Moon {
-        constructor(game) {
-            this.game = game;
-            this.moonFrameIndex = 0;
-            this.moonFrameCounter = 0;
-            this.moonAngle = this.game.config.moonAngle;
-        }
-
-        drawMoonOverlay(ctx, img, cx, cy, moonSize, frameIndex, totalFrames, alpha) {
-            if (!img.complete) return;
-            ctx.save();
-
-            // Recorte circular de la luna
-            ctx.beginPath();
-            ctx.arc(cx, cy, moonSize / 2, 0, Math.PI * 2);
-            ctx.clip();
-
-            ctx.globalAlpha = alpha;
-
-            // Calcular escala del sprite rectangular a la altura de la luna
-            const scale = moonSize / img.naturalHeight;
-            const overlayW = img.naturalWidth * scale;
-            const overlayH = moonSize;
-
-            // Centrar sobre la luna
-            const xOrigin = cx - overlayW / 2;
-            const yOrigin = cy - overlayH / 2;
-
-            // Offset animado
-            const baseShift = (Math.floor(frameIndex) / totalFrames) * overlayW;
-            const totalOffset = baseShift % overlayW;
-
-            // Dibujar dos repeticiones para wrap
-            ctx.drawImage(img, xOrigin + totalOffset, yOrigin, overlayW, overlayH);
-            ctx.drawImage(img, xOrigin + totalOffset - overlayW, yOrigin, overlayW, overlayH);
-
-            ctx.restore();
-        }
-
-        draw(ctx, behind = false) {
-            const orbit = this.game.boxSize * 0.8;
-            const moonSz = this.game.boxSize * 0.15;
-            const xOff = Math.sin(this.moonAngle) * orbit;
-            const yOff = Math.cos(this.moonAngle) * orbit * 0.3;
-            const depth = Math.cos(this.moonAngle);
-            const moonX = this.game.earth.cx + xOff;
-            const moonY = this.game.earth.cy + yOff;
-            const isBehind = depth < 0;
-
-            if (behind === isBehind) {
-                const alpha = 1.0;
-                this.drawMoonOverlay(
-                    ctx,
-                    this.game.assetManager.getMoonOverlay(),
-                    moonX,
-                    moonY,
-                    moonSz,
-                    this.moonFrameIndex,
-                    this.game.config.totalMoonFrames,
-                    alpha
-                );
-
-                const moonArgs = [ctx, moonX, moonY, moonSz / 2];
-
-                applyLighting(...moonArgs, {
-                    offsetX: 0,
-                    offsetY: 0,
-                    innerColor: behind ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)',
-                    outerColor: 'rgba(80,80,80,0.1)'
-                });
-
-                applySpecularHighlight(...moonArgs, {
-                    offsetX: -0.2,
-                    offsetY: 0.2,
-                    sizeFactor: 0.8,
-                    color: behind ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.1)'
-                });
-            }
-        }
-
-        update() {
-            this.moonFrameCounter++;
-            if (this.moonFrameCounter >= this.game.config.framesPerMoonUpdate) {
-                this.moonFrameCounter = 0;
-                this.moonFrameIndex = (this.moonFrameIndex + 1) % this.game.config.totalMoonFrames;
-            }
-
-            this.moonAngle += 0.001;
-        }
-    }
-
-    class Clouds {
-        constructor(game) {
-            this.game = game;
-            this.cloudFrameCounter = 0;
-            this.cloudFrameIndex = 0;
-        }
-
-        drawCloudLayer(ctx, img, alpha, invert, initShift = 0) {
-            if (!img.complete) return;
-            ctx.save();
-
-            // Recorte circular alrededor de la Tierra
-            ctx.beginPath();
-            ctx.arc(this.game.earth.cx, this.game.earth.cy, this.game.boxSize / 1.98, 0, Math.PI * 2);
-            ctx.clip();
-
-            // Opacidad
-            ctx.globalAlpha = alpha;
-
-            const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-            ctx.translate(this.game.earth.cx, this.game.earth.cy);
-            ctx.rotate(tilt);
-
-            const scale = this.game.boxSize / img.naturalHeight;
-            const overlayW = img.naturalWidth * scale;
-            const overlayH = this.game.boxSize;
-
-            const xOrigin = -overlayW / 2;
-            const yOrigin = -overlayH / 2;
-
-            const baseShift = (this.cloudFrameIndex / CONFIG.totalCloudFrames) * overlayW;
-
-            let totalOffset = (baseShift + initShift) % overlayW;
-            if (totalOffset < 0) totalOffset += overlayW;
-
-            const signedOffset = invert ? -totalOffset : +totalOffset;
-
-            const x1 = xOrigin + signedOffset;
-            const x2 = invert ? x1 + overlayW : x1 - overlayW;
-
-            // Dibujar ambas repeticiones
-            ctx.drawImage(img, x1, yOrigin, overlayW, overlayH);
-            ctx.drawImage(img, x2, yOrigin, overlayW, overlayH);
-
-            ctx.restore();
-        }
-
-        draw(ctx, behind = false) {
-            const cloudsInvertedImg = this.game.assetManager.getCloudOverlayInverted()
-            const cloudsImg = this.game.assetManager.getCloudOverlay()
-
-            if (cloudsInvertedImg.complete && behind) {
-                this.drawCloudLayer(ctx, cloudsInvertedImg, 0.7, true);
-            }
-
-            if (cloudsImg.complete && !behind) {
-                this.drawCloudLayer(ctx, cloudsImg, 0.8, false);
-            }
-        }
-
-        update() {
-            this.cloudFrameCounter++;
-            if (this.cloudFrameCounter >= CONFIG.framesPerCloudsUpdate) {
-                this.cloudFrameCounter = 0;
-                this.cloudFrameIndex = (this.cloudFrameIndex + 1) % CONFIG.totalCloudFrames;
-            }
-        }
-    }
-
     class SpaceJourneyGame {
+        static maxSecondInConfig(obj) {
+            let m = 0;
+            function scan(o) {
+                if (!o || typeof o !== "object") return;
+                if (Array.isArray(o)) {
+                    for (const it of o) scan(it);
+                    return;
+                }
+                if (Array.isArray(o.keyframes)) {
+                    for (const kf of o.keyframes) {
+                        if (kf && typeof kf.second === "number") m = Math.max(m, kf.second);
+                    }
+                }
+                for (const v of Object.values(o)) scan(v);
+            }
+            scan(obj);
+            return m;
+        }
+        static autoExtendJourneySeconds(cfg) {
+            const maxS = SpaceJourneyGame.maxSecondInConfig(cfg);
+            if (typeof cfg.journeySeconds !== "number" || cfg.journeySeconds < maxS) {
+                cfg.journeySeconds = maxS;
+            }
+        }
         constructor() {
-            this.canvas = document.getElementById('viaje');
-            this.ctx = this.canvas.getContext('2d');
-            this.config = CONFIG
+            this.canvas = document.getElementById("viaje");
+            this.ctx = this.canvas.getContext("2d");
+            this.config = CONFIG;
             this.play = false;
-
             this.assetManager = new AssetManager();
-            this.stars = new Stars(this);
-            this.sun = new Sun(this);
-            this.moon = new Moon(this);
+            this.camera = new Camera(this);
+            this.stars = new StarField(this);
+            this.sun = new CelestialBody(this, 'sun');
+            this.mars = new CelestialBody(this, 'mars');
+            this.jupiter = new CelestialBody(this, 'jupiter');
             this.earth = new Earth(this);
-            this.clouds = new Clouds(this);
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
-
-            this.startTime = performance.now();
-            // Establecer una velocidad fija para las estrellas
-            this.shipSpeed = CONFIG.starSpeed;
-
-            // Indicador de visibilidad de la Tierra
-            this.earthVisible = false;
-
-            this.setupCanvas();
+            this.elapsed = 0;
+            SpaceJourneyGame.autoExtendJourneySeconds(this.config);
+            this.resizeCanvas();
             this.setupEvents();
-
             this.animate();
         }
-
-        setupCanvas() {
-            this.resizeCanvas();
-        }
-
         setupEvents() {
-            window.addEventListener('resize', () => this.resizeCanvas());
-
-            const btn = document.getElementById('music-toggle');
-            const slider = document.getElementById('music-volume');
-
-            btn.addEventListener('click', () => {
-                this.play = !this.play;
-                this.audio.toggle();
-                btn.textContent = this.audio.isPlaying ? 'Pause' : 'Play';
-            });
-            slider.addEventListener('input', (e) => {
-                this.audio.setVolume(parseFloat(e.target.value));
+            window.addEventListener("resize", () => this.resizeCanvas());
+            const btn = document.getElementById("music-toggle");
+            const slider = document.getElementById("music-volume");
+            btn.addEventListener("click", () => this.setPlay(!this.play));
+            slider.addEventListener("input", (e) => this.audio.setVolume(parseFloat(e.target.value)));
+            const controls = document.getElementById("audio-controls");
+            this.timeSlider = document.createElement("input");
+            this.timeSlider.type = "range";
+            this.timeSlider.min = 0;
+            this.timeSlider.max = this.config.journeyDuration;
+            this.timeSlider.step = 0.01;
+            this.timeSlider.value = this.elapsed;
+            this.timeSlider.style.width = "300px";
+            this.timeSlider.style.marginLeft = "10px";
+            controls.appendChild(this.timeSlider);
+            const onScrub = (sec) => {
+                const clamped = Math.max(0, Math.min(this.config.journeyDuration, Number(sec) || 0));
+                const a = this.audio.audio;
+                if (!isNaN(a.duration) && isFinite(a.duration)) {
+                    a.currentTime = Math.max(0, Math.min(a.duration, clamped));
+                } else {
+                    a.currentTime = clamped;
+                }
+                this.syncToElapsed();
+            };
+            this.timeSlider.addEventListener("input", (e) => onScrub(e.target.value));
+            this.timeSlider.addEventListener("change", (e) => onScrub(e.target.value));
+            this.audio.audio.addEventListener("loadedmetadata", () => {
+                const a = this.audio.audio;
+                const dur = isFinite(a.duration) ? a.duration : 0;
+                const maxFromConfig = SpaceJourneyGame.maxSecondInConfig(this.config);
+                this.config.journeySeconds = Math.max(this.config.journeySeconds || 0, maxFromConfig, dur);
+                if (this.timeSlider) this.timeSlider.max = this.config.journeyDuration;
             });
         }
-
+        syncToElapsed() {
+            this.sun.syncToElapsed?.();
+            this.mars.syncToElapsed?.();
+            this.jupiter.syncToElapsed?.();
+            this.earth.syncToElapsed?.();
+        }
         resizeCanvas() {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
+            this.camera.onResize();
             this.stars.onResize();
         }
-
-        updateElapsedTime() {
-            const now = performance.now();
-            this.elapsed = now - this.startTime;
+        setPlay(next) {
+            this.play = next;
+            if (next) this.audio.play();
+            else this.audio.pause();
+            document.getElementById("music-toggle").textContent = next ? "Pause" : "Play";
         }
-
         drawBackground(ctx) {
-            ctx.fillStyle = '#000';
+            ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
-
         update() {
-            if (!this.play) return;
-            this.updateElapsedTime();
-            // Actualizar el Sol
             this.sun.update();
-            // Actualizar animaciones
-            this.stars.update();
+            this.mars.update();
+            this.jupiter.update();
             this.earth.update();
-            this.moon.update();
-            this.clouds.update();
+            this.stars.update();
         }
-
         draw() {
-            if (!this.play) return;
-
             this.drawBackground(this.ctx);
-            // Dibujar estrellas al frente
-            this.stars.draw(this.ctx);
-            // Dibujar Sol si está visible
+            this.stars.drawFar(this.ctx);
+            this.stars.drawNear(this.ctx);
             this.sun.draw(this.ctx);
-            // Dibujar estrellas de fondo
-            this.stars.draw(this.ctx, true);
-
-            // Dibujar la Tierra, nubes y Luna si corresponde
-            if (this.earthVisible && this.boxSize > 0) {
-                this.moon.draw(this.ctx, true);
-                this.clouds.draw(this.ctx, true);
-                this.earth.draw(this.ctx);
-                this.clouds.draw(this.ctx, false);
-                this.moon.draw(this.ctx, false);
+            this.mars.draw(this.ctx);
+            this.jupiter.draw(this.ctx);
+            if (this.earth.visible && this.earth.screen.r > 0) {
+                this.earth.drawChildren(this.ctx);
             }
-
-            // Cronómetro
-            this.ui.drawTimer(this.ctx, this.elapsed, CONFIG.journeyDuration);
-            // No se muestra la velocidad porque la nave no tiene velocidad propia
+            this.ui.drawTimer(this.ctx, this.elapsed, this.config.journeyDuration);
         }
-
         animate() {
-            this.update();
+            const a = this.audio.audio;
+            this.elapsed = a && typeof a.currentTime === "number" ? a.currentTime : 0;
+            if (this.play) {
+                this.update();
+            } else {
+                this.syncToElapsed();
+            }
+            if (this.timeSlider) this.timeSlider.value = this.elapsed;
             this.draw();
             requestAnimationFrame(() => this.animate());
         }
     }
 
-    // Inicializar el juego cuando se carga la página
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener("DOMContentLoaded", () => {
         new SpaceJourneyGame();
     });
-
 </script>
 </body>
 </html>
