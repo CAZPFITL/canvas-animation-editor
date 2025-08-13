@@ -46,7 +46,7 @@
         },
         sun: {
             radius: 0.0008,
-            color: 'yellow',
+            color: '#ffcc00',
             keyframes: [
                 { second: 0, pos: { x: 0, y: 0, z: 2000 } },
                 { second: 100, pos: { x: 0, y: 0, z: 1000 } },
@@ -55,12 +55,21 @@
             ]
         },
         mars: {
-            radius: 0.0008,
-            color: 'orange',
+            radius: 0.0008 / 2,
+            color: '#b75741',
             keyframes: [
                 { second: 0, pos: { x: 0, y: 0, z: 2000 } },
                 { second: 105, pos: { x: 0, y: 0, z: 1000 } },
-                { second: 120, pos: { x: -0.25, y: 0, z: 2 } }
+                { second: 118, pos: { x: -0.05, y: 0, z: 2 } }
+            ]
+        },
+        jupiter: {
+            radius: 0.0008,
+            color: '#b6f300',
+            keyframes: [
+                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
+                { second: 105, pos: { x: 0, y: 0, z: 1000 } },
+                { second: 120, pos: { x: -0.3, y: 0, z: 4 } }
             ]
         },
         earth: {
@@ -69,9 +78,9 @@
             keyframes: [
                 // { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
                 { second: 0, pos: { x: 0, y: 0, z: 10 } },
-                { second: 119, pos: { x: 0, y: 0, z: 10 } },
-                { second: 120, pos: { x: 0, y: 0, z: 2 } },
-                { second: 170, pos: { x: 0, y: 0, z: 0.3 } },
+                { second: 110, pos: { x: 0, y: 0, z: 10 } },
+                { second: 120, pos: { x: 0, y: 0, z: 0.5 } },
+                { second: 150, pos: { x: 0, y: 0, z: 0.2 } },
                 { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
                 { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
                 { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
@@ -679,6 +688,7 @@
             this.stars = new StarField(this);
             this.sun = new CelestialBody(this, 'sun');
             this.mars = new CelestialBody(this, 'mars');
+            this.jupiter = new CelestialBody(this, 'jupiter');
             this.earth = new Earth(this);
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
@@ -727,6 +737,7 @@
         syncToElapsed() {
             this.sun.syncToElapsed?.();
             this.mars.syncToElapsed?.();
+            this.jupiter.syncToElapsed?.();
             this.earth.syncToElapsed?.();
         }
         resizeCanvas() {
@@ -748,6 +759,7 @@
         update() {
             this.sun.update();
             this.mars.update();
+            this.jupiter.update();
             this.earth.update();
             this.stars.update();
         }
@@ -757,6 +769,7 @@
             this.stars.drawNear(this.ctx);
             this.sun.draw(this.ctx);
             this.mars.draw(this.ctx);
+            this.jupiter.draw(this.ctx);
             if (this.earth.visible && this.earth.screen.r > 0) {
                 this.earth.drawChildren(this.ctx);
             }
