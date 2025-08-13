@@ -46,26 +46,36 @@
         },
         sun: {
             radius: 0.0008,
+            color: 'yellow',
             keyframes: [
                 { second: 0, pos: { x: 0, y: 0, z: 2000 } },
                 { second: 100, pos: { x: 0, y: 0, z: 1000 } },
                 { second: 110 },
-                { second: 120, pos: { x: -0.08, y: 0, z: 1.09 } }
+                { second: 120, pos: { x: -0.012, y: 0, z: 1.09 } }
+            ]
+        },
+        mars: {
+            radius: 0.0008,
+            color: 'orange',
+            keyframes: [
+                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
+                { second: 105, pos: { x: 0, y: 0, z: 1000 } },
+                { second: 120, pos: { x: -0.25, y: 0, z: 2 } }
             ]
         },
         earth: {
             radius: 0.0008 / 109,
             scrollSpeed: 0.02,
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
-                // { second: 0, pos: { x: 0, y: 0, z: 10 } },
-                // { second: 119, pos: { x: 0, y: 0, z: 10 } },
-                // { second: 120, pos: { x: 0, y: 0, z: 2 } },
-                // { second: 170, pos: { x: 0, y: 0, z: 0.3 } },
-                // { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
-                // { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
-                // { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
-                // { second: 285, pos: { x: 0, y: 0, z: 0.012 } }
+                // { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
+                { second: 0, pos: { x: 0, y: 0, z: 10 } },
+                { second: 119, pos: { x: 0, y: 0, z: 10 } },
+                { second: 120, pos: { x: 0, y: 0, z: 2 } },
+                { second: 170, pos: { x: 0, y: 0, z: 0.3 } },
+                { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
+                { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
+                { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
+                { second: 285, pos: { x: 0, y: 0, z: 0.012 } }
             ],
             clouds: {
                 back: { scrollSpeed: 0.03, alpha: 0.8 },
@@ -353,24 +363,26 @@
         }
     }
 
-    class Sun {
-        constructor(game) {
+    class CelestialBody {
+        constructor(game, name) {
             this.game = game;
             this.visible = false;
             this.worldPos = { x: 0, y: 0, z: 5 };
-            this.worldR = game.config.sun.radius ?? 0.001;
+            this.name = name;
+            this.color = game.config[name].color ?? '#ff00ff';
+            this.worldR = game.config[name].radius ?? 0.001;
             this.screen = { x: 0, y: 0, r: 0 };
         }
         draw(ctx) {
             if (!this.visible) return;
             ctx.beginPath();
             ctx.arc(this.screen.x, this.screen.y, this.screen.r, 0, Math.PI * 2);
-            ctx.fillStyle = "yellow";
+            ctx.fillStyle = this.color;
             ctx.fill();
         }
         update() {
             const t = this.game.elapsed || 0;
-            const kf = this.game.config.sun.keyframes;
+            const kf = this.game.config[this.name].keyframes;
             const pos = interpolateVec3(t, kf, { x: 0, y: 0, z: 5 });
             this.worldPos = pos;
             const proj = this.game.camera.project(pos);
@@ -510,8 +522,9 @@
         }
     }
 
-    class Earth {
+    class Earth extends CelestialBody {
         constructor(game) {
+            super(game, 'earth');
             this.game = game;
             this.visible = false;
             this.worldPos = { x: 0, y: 0, z: 6 };
@@ -566,19 +579,7 @@
                 color: "rgba(148,210,255,0.2)"
             });
         }
-        update() {
-            const t = this.game.elapsed || 0;
-            const kf = this.game.config.earth.keyframes;
-            const pos = interpolateVec3(t, kf, { x: 0, y: 0, z: 6 });
-            this.worldPos = pos;
-            const proj = this.game.camera.project(pos);
-            this.screen.x = proj.x;
-            this.screen.y = proj.y;
-            this.screen.r = Math.max(0, this.worldR * proj.k);
-            this.visible = this.screen.r > 0;
-            this.moon.update();
-            this.clouds.update();
-        }
+
         drawChildren(ctx) {
             if (!this.visible || this.screen.r <= 0) return;
             this.moon.draw(ctx, true);
@@ -589,6 +590,8 @@
         }
         syncToElapsed() {
             this.update();
+            this.moon.update();
+            this.clouds.update();
             this.moon.syncToElapsed();
             this.clouds.syncToElapsed();
         }
@@ -674,7 +677,8 @@
             this.assetManager = new AssetManager();
             this.camera = new Camera(this);
             this.stars = new StarField(this);
-            this.sun = new Sun(this);
+            this.sun = new CelestialBody(this, 'sun');
+            this.mars = new CelestialBody(this, 'mars');
             this.earth = new Earth(this);
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
@@ -722,6 +726,7 @@
         }
         syncToElapsed() {
             this.sun.syncToElapsed?.();
+            this.mars.syncToElapsed?.();
             this.earth.syncToElapsed?.();
         }
         resizeCanvas() {
@@ -742,6 +747,7 @@
         }
         update() {
             this.sun.update();
+            this.mars.update();
             this.earth.update();
             this.stars.update();
         }
@@ -750,6 +756,7 @@
             this.stars.drawFar(this.ctx);
             this.stars.drawNear(this.ctx);
             this.sun.draw(this.ctx);
+            this.mars.draw(this.ctx);
             if (this.earth.visible && this.earth.screen.r > 0) {
                 this.earth.drawChildren(this.ctx);
             }
