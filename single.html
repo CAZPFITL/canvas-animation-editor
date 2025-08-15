@@ -51,6 +51,10 @@
                 class="w-28 md:w-36 accent-blue-500 h-2 rounded-lg cursor-pointer"
             />
         </div>
+
+        <button id="fs-toggle" class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>
+        </button>
     </div>
 </div>
 
@@ -721,13 +725,14 @@
         constructor(game) {
             this.game = game;
             this.canvas = game.canvas;
-            this.controlsRoot = document.getElementById("audio-controls");
             this.btn = document.getElementById("music-toggle");
             this.volume = document.getElementById("music-volume");
             this.timeSlider = document.getElementById("timeSlider");
             this.volumeBtn = this.volume ? this.volume.previousElementSibling : null;
             this.timeNowEl = document.getElementById("uiTimeNow");
             this.timeTotalEl = document.getElementById("uiTimeTotal");
+            this.fsBtn = document.getElementById("fs-toggle");
+            this.bindCanvasClickToggle();
         }
         initControls() {
             this.btn.addEventListener("click", () => {
@@ -763,10 +768,34 @@
                 this.timeSlider.addEventListener("input", (e) => onScrub(e.target.value));
                 this.timeSlider.addEventListener("change", (e) => onScrub(e.target.value));
             }
+            if (this.fsBtn) {
+                this.fsBtn.classList.add("cursor-pointer");
+                this.fsBtn.addEventListener("click", async () => {
+                    if (!document.fullscreenElement) {
+                        const el = document.documentElement;
+                        if (el.requestFullscreen) await el.requestFullscreen();
+                    } else {
+                        if (document.exitFullscreen) await document.exitFullscreen();
+                    }
+                    this.updateFSButton();
+                });
+                document.addEventListener("fullscreenchange", () => this.updateFSButton());
+                this.updateFSButton();
+            }
             this.game.audio.addEventListener("loadedmetadata", () => this.game.syncJourneySecondsFromAudio());
             this.updatePlayButton();
             this.renderVolumeIcon();
             this.setTimeLabel(0, this.game.config.journeyDuration);
+        }
+        updateFSButton() {
+            if (!this.fsBtn) return;
+            if (document.fullscreenElement) {
+                this.fsBtn.innerHTML =
+                    '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 5H5v4h2V7h2V5zm10 0h-4v2h2v2h2V5zM5 15H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>';
+            } else {
+                this.fsBtn.innerHTML =
+                    '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>';
+            }
         }
         updatePlayButton() {
             if (!this.btn) return;
@@ -808,6 +837,19 @@
             };
             if (this.timeNowEl) this.timeNowEl.innerHTML = fmt(elapsedSec);
             if (this.timeTotalEl) this.timeTotalEl.innerHTML = fmt(totalSec);
+        }
+        bindCanvasClickToggle() {
+            this.canvas.addEventListener("click", () => {
+                this.game.play = !this.game.play;
+
+                if (this.game.play) {
+                    this.game.audio.play();
+                } else {
+                    this.game.audio.pause();
+                }
+
+                this.updatePlayButton(); // si tienes un indicador visual
+            });
         }
     }
 
