@@ -65,7 +65,7 @@
         },
         jupiter: {
             radius: 0.0008,
-            color: '#b6f300',
+            color: '#f3e8a3',
             keyframes: [
                 { second: 0, pos: { x: 0, y: 0, z: 2000 } },
                 { second: 105, pos: { x: 0, y: 0, z: 1000 } },
@@ -74,13 +74,15 @@
         },
         earth: {
             radius: 0.0008 / 109,
+            color: '#3687ee',
             scrollSpeed: 0.02,
             keyframes: [
                 // { second: 0, pos: { x: 0, y: 0, z: 0.01 } },
-                { second: 0, pos: { x: 0, y: 0, z: 10 } },
+                { second: 0, pos: { x: 0, y: 0, z: 100 } },
                 { second: 110, pos: { x: 0, y: 0, z: 10 } },
-                { second: 120, pos: { x: 0, y: 0, z: 0.5 } },
-                { second: 150, pos: { x: 0, y: 0, z: 0.2 } },
+                { second: 120, pos: { x: 0, y: 0, z: 0.6 } },
+                { second: 130, pos: { x: 0, y: 0, z: 0.4 } },
+                { second: 140, pos: { x: 0, y: 0, z: 0.2 } },
                 { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
                 { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
                 { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
@@ -90,7 +92,11 @@
                 back: { scrollSpeed: 0.03, alpha: 0.8 },
                 front: { scrollSpeed: 0.03, alpha: 0.5 }
             },
-            moon: { initialAngle: -1.75, angularVelocity: 0.06, scrollSpeed: 0.01 }
+            moon: {
+                initialAngle: -1.75,
+                angularVelocity: 0.06,
+                scrollSpeed: 0.01
+            }
         },
         earthTiltDeg: 4,
         get journeyDuration() {
@@ -488,9 +494,9 @@
             const cfg = this.game.config.earth.moon || {};
             const elapsed = this.game.elapsed || 0;
             const angle = (cfg.initialAngle ?? -1.75) + (cfg.angularVelocity ?? 0.06) * elapsed;
-            const orbit = earth.worldR * 1.6;
+            const orbit = earth.worldR * 5.6;
             const mx = earth.worldPos.x + Math.sin(angle) * orbit;
-            const my = earth.worldPos.y + Math.cos(angle) * orbit * 0.3;
+            const my = earth.worldPos.y + Math.cos(angle) * orbit * 0.1;
             const mz = earth.worldPos.z;
             this.worldPos = { x: mx, y: my, z: mz };
             this.worldR = earth.worldR * 0.15;
