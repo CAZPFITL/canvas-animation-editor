@@ -181,26 +181,6 @@
         return m;
     }
 
-    // function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
-    //     const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
-    //     if (!withPos.length) return fallback;
-    //     withPos.sort((a, b) => a.second - b.second);
-    //     if (elapsed <= withPos[0].second) return withPos[0].pos;
-    //     if (elapsed >= withPos[withPos.length - 1].second) return withPos[withPos.length - 1].pos;
-    //     for (let i = 0; i < withPos.length - 1; i++) {
-    //         const k1 = withPos[i];
-    //         const k2 = withPos[i + 1];
-    //         if (elapsed >= k1.second && elapsed <= k2.second) {
-    //             const t = (elapsed - k1.second) / (k2.second - k1.second || 1);
-    //             return {
-    //                 x: k1.pos.x + (k2.pos.x - k1.pos.x) * t,
-    //                 y: k1.pos.y + (k2.pos.y - k1.pos.y) * t,
-    //                 z: k1.pos.z + (k2.pos.z - k1.pos.z) * t
-    //             };
-    //         }
-    //     }
-    //     return withPos[withPos.length - 1].pos;
-    // }
     function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
         const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
         if (!withPos.length) return fallback;
