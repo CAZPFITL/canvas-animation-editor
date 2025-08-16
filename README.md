@@ -39,3 +39,25 @@ El proyecto utiliza diferentes funciones de easing para suavizar transiciones en
 - **bezierY** → Permite curvas personalizadas mediante parámetros Bézier.
 
 ![img.png](assets/img/easings.png)
+
+## TODO / Futuro
+
+- [ ] Implementar **clamping** de elementos dentro de otros elementos.
+    - [ ] Definir modos de clamping (ej: centro, bordes, libre).
+    - [ ] Permitir elegir la posición relativa dentro del elemento padre.
+
+- [ ] Añadir soporte para **órbitas ajustables**:
+    - [ ] Parámetros de **periapsis** y **apoapsis**.
+    - [ ] Definir **inclinación orbital**.
+    - [ ] Controlar **velocidad angular** y **excentricidad**.
+    - [ ] Simular órbitas circulares, elípticas y excéntricas.
+
+- [ ] Sistema de **modos de movimiento avanzados**:
+    - [ ] Opción de trayectorias libres con física básica.
+    - [ ] Integración de nuevos easings para animaciones orbitales.
+    - [ ] Posibilidad de combinar órbitas + clamping + easing.
+
+- [ ] Mejorar visualización:
+    - [ ] Mostrar trayectorias orbitales (líneas/curvas guía).
+    - [ ] Añadir efectos de luz y sombras dinámicos en función de la órbita.
+    - [ ] Optimizar rendimiento para manejar más cuerpos simultáneos.  
