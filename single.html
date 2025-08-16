@@ -87,7 +87,7 @@
                 {second: 0, pos: {x: 0, y: 0, z: 2000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
                 {second: 110},
-                {second: 124, pos: {x: -0.012, y: 0, z: 1.09}}
+                {second: 122, pos: {x: -0.012, y: 0, z: 1.09}}
             ]
         },
         mars: {
@@ -96,7 +96,7 @@
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 2000}},
                 {second: 105, pos: {x: 0, y: 0, z: 1000}},
-                {second: 118, pos: {x: -0.05, y: 0, z: 2}}
+                {second: 116, pos: {x: -0.05, y: 0, z: 2}}
             ]
         },
         jupiter: {
@@ -105,54 +105,53 @@
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 2000}},
                 {second: 105, pos: {x: 0, y: 0, z: 1000}},
-                {second: 120, pos: {x: -0.3, y: 0, z: 4}}
+                {second: 118, pos: {x: -0.3, y: 0, z: 4}}
             ]
         },
         earth: {
             radius: 0.0008 / 109,
             color: "#3687ee",
-            scrollSpeed: 0.02,
+            scrollSpeed: 0.0045,
             keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 100.0}},
-                {second: 20, pos: {x: 0, y: 0, z: 75.92245}},
-                {second: 40, pos: {x: 0, y: 0, z: 53.60015}},
-                {second: 60, pos: {x: 0, y: 0, z: 34.66041}},
-                {second: 80, pos: {x: 0, y: 0, z: 20.48392}},
-                {second: 100, pos: {x: 0, y: 0, z: 12.10415}},
-                {second: 116, pos: {x: 0, y: 0, z: 10.0}},
-
-                // transición suave 116–126 s
-                {second: 118, pos: {x: 0, y: 0, z: 9.10238}},
-                {second: 120, pos: {x: 0, y: 0, z: 6.75238}},
-                {second: 122, pos: {x: 0, y: 0, z: 3.84762}},
-                {second: 124, pos: {x: 0, y: 0, z: 1.49762}},
-                {second: 126, pos: {x: 0, y: 0, z: 0.6}},
-
-                // tramo largo 126–219 s, easing senoidal
-                {second: 146, pos: {x: 0, y: 0, z: 0.53673}},
-                {second: 166, pos: {x: 0, y: 0, z: 0.37473}},
-                {second: 186, pos: {x: 0, y: 0, z: 0.18517}},
-                {second: 206, pos: {x: 0, y: 0, z: 0.05133}},
-                {second: 219, pos: {x: 0, y: 0, z: 0.024}},
-
-                // últimos microajustes
-                {second: 220, pos: {x: 0, y: 0, z: 0.022}},
-                {second: 221, pos: {x: 0, y: 0, z: 0.021}},
-                {second: 222, pos: {x: 0, y: 0, z: 0.020}},
-                {second: 260, pos: {x: 0, y: 0, z: 0.012}},
-                {second: 285, pos: {x: 0, y: 0, z: 0.0098}}
+                { second: 0,   pos: { x: 0, y: 0, z: 100 }, ease: "expoOut" },
+                { second: 110, pos: { x: 0, y: 0, z: 10 },  ease: "cubicInOut" }, // Appears
+                { second: 126, pos: { x: 0, y: 0, z: 0.2 }, ease: "smoothstep" }, // Speed down
+                { second: 256, pos: { x: 0, y: 0, z: 0.012 } }, // final zoom
+                { second: 285, pos: { x: 0, y: 0, z: 0.0095 } } // final position
             ],
             clouds: {
-                back: {scrollSpeed: 0.03, alpha: 0.8},
-                front: {scrollSpeed: 0.03, alpha: 0.5}
+                back: {scrollSpeed: 0.006, alpha: 0.8},
+                front: {scrollSpeed: 0.006, alpha: 0.5}
             },
-            moon: {initialAngle: -1.75, angularVelocity: 0.06, scrollSpeed: 0.01}
+            moon: {initialAngle: -1.75, angularVelocity: 0.055, scrollSpeed: 0.01}
         },
         earthTiltDeg: 4,
         get journeyDuration() {
             return this.journeySeconds ?? 0;
         }
     };
+
+    const Easings = {
+        linear: t => t,
+        quadIn: t => t*t,
+        quadOut: t => 1 - (1 - t)*(1 - t),
+        quadInOut: t => (t<0.5) ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2,
+        cubicInOut: t => (t<0.5) ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+        expoOut: t => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+        smoothstep: t => t*t*(3 - 2*t),
+        bezierY: ([, y1, , y2]) => (t) => {
+            const u = 1 - t;
+            const y = u*u*u*0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*1;
+            return y;
+        }
+    };
+
+    function getEaseFn(k1, k2) {
+        const e = k1?.ease ?? k2?.ease ?? 'linear';
+        if (typeof e === 'string' && Easings[e]) return Easings[e];
+        if (Array.isArray(e) && e.length === 4) return Easings.bezierY(e);
+        return Easings.linear;
+    }
 
     function autoExtendJourneySeconds(cfg) {
         const maxS = maxSecondInConfig(cfg);
@@ -182,17 +181,41 @@
         return m;
     }
 
+    // function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
+    //     const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
+    //     if (!withPos.length) return fallback;
+    //     withPos.sort((a, b) => a.second - b.second);
+    //     if (elapsed <= withPos[0].second) return withPos[0].pos;
+    //     if (elapsed >= withPos[withPos.length - 1].second) return withPos[withPos.length - 1].pos;
+    //     for (let i = 0; i < withPos.length - 1; i++) {
+    //         const k1 = withPos[i];
+    //         const k2 = withPos[i + 1];
+    //         if (elapsed >= k1.second && elapsed <= k2.second) {
+    //             const t = (elapsed - k1.second) / (k2.second - k1.second || 1);
+    //             return {
+    //                 x: k1.pos.x + (k2.pos.x - k1.pos.x) * t,
+    //                 y: k1.pos.y + (k2.pos.y - k1.pos.y) * t,
+    //                 z: k1.pos.z + (k2.pos.z - k1.pos.z) * t
+    //             };
+    //         }
+    //     }
+    //     return withPos[withPos.length - 1].pos;
+    // }
     function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
         const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
         if (!withPos.length) return fallback;
         withPos.sort((a, b) => a.second - b.second);
+
         if (elapsed <= withPos[0].second) return withPos[0].pos;
         if (elapsed >= withPos[withPos.length - 1].second) return withPos[withPos.length - 1].pos;
+
         for (let i = 0; i < withPos.length - 1; i++) {
             const k1 = withPos[i];
             const k2 = withPos[i + 1];
             if (elapsed >= k1.second && elapsed <= k2.second) {
-                const t = (elapsed - k1.second) / (k2.second - k1.second || 1);
+                const rawT = (elapsed - k1.second) / (k2.second - k1.second || 1);
+                const ease = getEaseFn(k1, k2);     // 👈 usa easing definido en el keyframe de inicio
+                const t = ease(Math.max(0, Math.min(1, rawT)));
                 return {
                     x: k1.pos.x + (k2.pos.x - k1.pos.x) * t,
                     y: k1.pos.y + (k2.pos.y - k1.pos.y) * t,
