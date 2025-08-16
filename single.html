@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Star Fields</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,8 +17,11 @@
 
 <div class="fixed bottom-0 left-0 right-0 z-20 bg-black/70 backdrop-blur-sm border-t border-white/10 opacity-0 hover:opacity-100 transition">
     <div class="flex items-center gap-3 px-3 py-2 text-white">
-        <button id="music-toggle" class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"/></svg>
+        <button id="music-toggle"
+                class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5v14l11-7-11-7z"/>
+            </svg>
         </button>
 
         <div id="ui-timer" class="text-xs sm:text-sm font-mono tabular-nums select-none px-1">
@@ -27,33 +30,39 @@
 
         <div class="flex-1 px-2">
             <input
-                id="timeSlider"
-                type="range"
-                min="0"
-                max="100"
-                step="0.01"
-                value="0"
-                class="w-full accent-blue-500 h-2 rounded-lg cursor-pointer"
+                    id="timeSlider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value="0"
+                    class="w-full accent-blue-500 h-2 rounded-lg cursor-pointer"
             />
         </div>
 
         <div class="flex items-center gap-2">
             <div class="grid place-items-center w-9 h-9 rounded-full bg-white/10">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/></svg>
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M5 9v6h4l5 5V4L9 9H5z"/>
+                    <path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/>
+                </svg>
             </div>
             <input
-                id="music-volume"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value="0.5"
-                class="w-28 md:w-36 accent-blue-500 h-2 rounded-lg cursor-pointer"
+                    id="music-volume"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.5"
+                    class="w-28 md:w-36 accent-blue-500 h-2 rounded-lg cursor-pointer"
             />
         </div>
 
-        <button id="fs-toggle" class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>
+        <button id="fs-toggle"
+                class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/>
+            </svg>
         </button>
     </div>
 </div>
@@ -61,7 +70,7 @@
 <script>
     const CONFIG = {
         journeySeconds: 285,
-        camera: { focal: 600 },
+        camera: {focal: 600},
         starfield: {
             stopNearAt: 90,
             numFar: 100,
@@ -75,28 +84,28 @@
             radius: 0.0008,
             color: "#ffcc00",
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
-                { second: 100, pos: { x: 0, y: 0, z: 1000 } },
-                { second: 110 },
-                { second: 120, pos: { x: -0.012, y: 0, z: 1.09 } }
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 110},
+                {second: 124, pos: {x: -0.012, y: 0, z: 1.09}}
             ]
         },
         mars: {
             radius: 0.0008 / 2,
             color: "#b75741",
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
-                { second: 105, pos: { x: 0, y: 0, z: 1000 } },
-                { second: 118, pos: { x: -0.05, y: 0, z: 2 } }
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 105, pos: {x: 0, y: 0, z: 1000}},
+                {second: 118, pos: {x: -0.05, y: 0, z: 2}}
             ]
         },
         jupiter: {
             radius: 0.0008,
             color: "#f3e8a3",
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 2000 } },
-                { second: 105, pos: { x: 0, y: 0, z: 1000 } },
-                { second: 120, pos: { x: -0.3, y: 0, z: 4 } }
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 105, pos: {x: 0, y: 0, z: 1000}},
+                {second: 120, pos: {x: -0.3, y: 0, z: 4}}
             ]
         },
         earth: {
@@ -104,21 +113,40 @@
             color: "#3687ee",
             scrollSpeed: 0.02,
             keyframes: [
-                { second: 0, pos: { x: 0, y: 0, z: 100 } },
-                { second: 110, pos: { x: 0, y: 0, z: 10 } },
-                { second: 120, pos: { x: 0, y: 0, z: 0.6 } },
-                { second: 130, pos: { x: 0, y: 0, z: 0.4 } },
-                { second: 140, pos: { x: 0, y: 0, z: 0.2 } },
-                { second: 222, pos: { x: 0, y: 0, z: 0.0425 } },
-                { second: 240, pos: { x: 0, y: 0, z: 0.024620689655172414 } },
-                { second: 260, pos: { x: 0, y: 0, z: 0.016778067885117494 } },
-                { second: 285, pos: { x: 0, y: 0, z: 0.012 } }
+                {second: 0, pos: {x: 0, y: 0, z: 100.0}},
+                {second: 20, pos: {x: 0, y: 0, z: 75.92245}},
+                {second: 40, pos: {x: 0, y: 0, z: 53.60015}},
+                {second: 60, pos: {x: 0, y: 0, z: 34.66041}},
+                {second: 80, pos: {x: 0, y: 0, z: 20.48392}},
+                {second: 100, pos: {x: 0, y: 0, z: 12.10415}},
+                {second: 116, pos: {x: 0, y: 0, z: 10.0}},
+
+                // transición suave 116–126 s
+                {second: 118, pos: {x: 0, y: 0, z: 9.10238}},
+                {second: 120, pos: {x: 0, y: 0, z: 6.75238}},
+                {second: 122, pos: {x: 0, y: 0, z: 3.84762}},
+                {second: 124, pos: {x: 0, y: 0, z: 1.49762}},
+                {second: 126, pos: {x: 0, y: 0, z: 0.6}},
+
+                // tramo largo 126–219 s, easing senoidal
+                {second: 146, pos: {x: 0, y: 0, z: 0.53673}},
+                {second: 166, pos: {x: 0, y: 0, z: 0.37473}},
+                {second: 186, pos: {x: 0, y: 0, z: 0.18517}},
+                {second: 206, pos: {x: 0, y: 0, z: 0.05133}},
+                {second: 219, pos: {x: 0, y: 0, z: 0.024}},
+
+                // últimos microajustes
+                {second: 220, pos: {x: 0, y: 0, z: 0.022}},
+                {second: 221, pos: {x: 0, y: 0, z: 0.021}},
+                {second: 222, pos: {x: 0, y: 0, z: 0.020}},
+                {second: 260, pos: {x: 0, y: 0, z: 0.012}},
+                {second: 285, pos: {x: 0, y: 0, z: 0.0098}}
             ],
             clouds: {
-                back: { scrollSpeed: 0.03, alpha: 0.8 },
-                front: { scrollSpeed: 0.03, alpha: 0.5 }
+                back: {scrollSpeed: 0.03, alpha: 0.8},
+                front: {scrollSpeed: 0.03, alpha: 0.5}
             },
-            moon: { initialAngle: -1.75, angularVelocity: 0.06, scrollSpeed: 0.01 }
+            moon: {initialAngle: -1.75, angularVelocity: 0.06, scrollSpeed: 0.01}
         },
         earthTiltDeg: 4,
         get journeyDuration() {
@@ -132,8 +160,10 @@
             cfg.journeySeconds = maxS;
         }
     }
+
     function maxSecondInConfig(obj) {
         let m = 0;
+
         function scan(o) {
             if (!o || typeof o !== "object") return;
             if (Array.isArray(o)) {
@@ -147,10 +177,12 @@
             }
             for (const v of Object.values(o)) scan(v);
         }
+
         scan(obj);
         return m;
     }
-    function interpolateVec3(elapsed, keyframes, fallback = { x: 0, y: 0, z: 5 }) {
+
+    function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
         const withPos = (keyframes || []).filter((k) => k.pos && typeof k.second === "number");
         if (!withPos.length) return fallback;
         withPos.sort((a, b) => a.second - b.second);
@@ -170,6 +202,7 @@
         }
         return withPos[withPos.length - 1].pos;
     }
+
     function applyLighting(ctx, cx, cy, radius, options = {}) {
         const {
             offsetX = 0.5,
@@ -198,8 +231,9 @@
         ctx.fill();
         ctx.restore();
     }
+
     function applySpecularHighlight(ctx, cx, cy, radius, options = {}) {
-        const { offsetX = 0.5, offsetY = -0.5, sizeFactor = 0.3, color = "rgba(255,255,255,0.6)" } =
+        const {offsetX = 0.5, offsetY = -0.5, sizeFactor = 0.3, color = "rgba(255,255,255,0.6)"} =
             options;
         const lightX = cx + radius * offsetX;
         const lightY = cy + radius * offsetY;
@@ -214,8 +248,9 @@
         ctx.fill();
         ctx.restore();
     }
+
     function applyAtmosphere(ctx, cx, cy, radius, options = {}) {
-        const { color = "rgba(0,150,255,0.2)", innerAlpha = 0.0 } = options;
+        const {color = "rgba(0,150,255,0.2)", innerAlpha = 0.0} = options;
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
         const atm = ctx.createRadialGradient(cx, cy, radius * 0.9, cx, cy, radius);
@@ -234,6 +269,7 @@
         cloudInvertedUrl = "./assets/img/cloud2.png";
         moonUrl = "./assets/img/moon.png";
         songUrl = "./assets/audio/song.m4a";
+
         constructor() {
             this.earthSprite = new Image();
             this.cloudOverlay = new Image();
@@ -242,6 +278,7 @@
             this.song = new Audio();
             this.loadAssets();
         }
+
         loadAssets() {
             this.earthSprite.src = this.earthUrl;
             this.cloudOverlay.src = this.cloudUrl;
@@ -252,11 +289,26 @@
             this.song.preload = "auto";
             this.song.volume = 0.5;
         }
-        getEarthSprite() { return this.earthSprite; }
-        getCloudOverlay() { return this.cloudOverlay; }
-        getCloudOverlayInverted() { return this.cloudOverlayInverted; }
-        getMoonOverlay() { return this.moonOverlay; }
-        getSong() { return this.song; }
+
+        getEarthSprite() {
+            return this.earthSprite;
+        }
+
+        getCloudOverlay() {
+            return this.cloudOverlay;
+        }
+
+        getCloudOverlayInverted() {
+            return this.cloudOverlayInverted;
+        }
+
+        getMoonOverlay() {
+            return this.moonOverlay;
+        }
+
+        getSong() {
+            return this.song;
+        }
     }
 
     class Camera {
@@ -267,6 +319,7 @@
             this.cy = 0;
             this.minDim = 1;
         }
+
         onResize() {
             const c = this.game.canvas;
             this.cx = c.width / 2;
@@ -274,10 +327,11 @@
             this.minDim = Math.min(c.width, c.height);
             this.focal = this.game.config.camera?.focal ?? 600;
         }
+
         project(pos) {
             const z = Math.max(pos.z, 0.001);
             const k = (this.minDim * this.focal) / z;
-            return { x: this.cx + pos.x * k, y: this.cy + pos.y * k, k };
+            return {x: this.cx + pos.x * k, y: this.cy + pos.y * k, k};
         }
     }
 
@@ -295,9 +349,11 @@
             this._initStars();
             this.onResize();
         }
+
         _randCenteredNorm() {
             return (Math.random() - 0.5) * (1 + Math.random() * 0.3);
         }
+
         _makeStar(isNear) {
             const cfg = this.game.config.starfield;
             const [minS, maxS] = isNear ? cfg.nearSpeedRange : cfg.farSpeedRange;
@@ -312,11 +368,13 @@
                 dead: false
             };
         }
+
         _initStars() {
             const cfg = this.game.config.starfield;
-            this.farStars = Array.from({ length: cfg.numFar }, () => this._makeStar(false));
-            this.nearStars = Array.from({ length: cfg.numNear }, () => this._makeStar(true));
+            this.farStars = Array.from({length: cfg.numFar}, () => this._makeStar(false));
+            this.nearStars = Array.from({length: cfg.numNear}, () => this._makeStar(true));
         }
+
         onResize() {
             const c = this.game.canvas;
             this.width = c.width;
@@ -328,28 +386,32 @@
             this.zRange = this.zMax - this.zMin;
             this.focal = this.game.config.starfield.focalLength;
         }
+
         _zAt(star, t) {
             const speed = star.speed * this.game.config.starfield.speedScale;
             const u = ((t * speed + star.phase) % 1 + 1) % 1;
             return this.zMin + (1 - u) * this.zRange;
         }
+
         _sizeAt(star, z) {
             const base = Math.max(0.5, (0.5 - z / this.zMax) * 5);
             const proximity = star.speed / 8;
             const boost = proximity > 0.5 ? 1 + ((this.zMax - z) / this.zMax) * proximity : 1;
             return Math.max(base * boost, 0.5);
         }
+
         _project(star, z) {
             const k = this.focal / z;
             const sx = star.rx * this.width * k + this.centerX;
             const sy = star.ry * this.height * k + this.centerY;
-            return { sx, sy };
+            return {sx, sy};
         }
+
         _drawSet(ctx, stars, t) {
             for (let i = 0; i < stars.length; i++) {
                 const s = stars[i];
                 const z = this._zAt(s, t);
-                const { sx, sy } = this._project(s, z);
+                const {sx, sy} = this._project(s, z);
                 if (sx >= 0 && sx < this.width && sy >= 0 && sy < this.height) {
                     ctx.beginPath();
                     ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
@@ -358,6 +420,7 @@
                 }
             }
         }
+
         _drawSetFreezeOut(ctx, t) {
             const margin = Math.max(this.width, this.height) * 0.1;
             const vFactor = this.zRange;
@@ -369,7 +432,7 @@
                 const v = s.speed * this.game.config.starfield.speedScale * vFactor;
                 let z = s.zFreeze - v * dt;
                 z = Math.max(this.zMin * 0.01, z);
-                const { sx, sy } = this._project(s, z);
+                const {sx, sy} = this._project(s, z);
                 const off =
                     sx < -margin || sx > this.width + margin || sy < -margin || sy > this.height + margin;
                 if (off) {
@@ -382,10 +445,12 @@
                 ctx.fill();
             }
         }
+
         drawFar(ctx) {
             const t = this.game.elapsed || 0;
             this._drawSet(ctx, this.farStars, t);
         }
+
         drawNear(ctx) {
             const t = this.game.elapsed || 0;
             if (!this.cutoffActivated) {
@@ -397,6 +462,7 @@
             }
             this._drawSetFreezeOut(ctx, t);
         }
+
         update() {
             const t = this.game.elapsed || 0;
             const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
@@ -424,12 +490,13 @@
         constructor(game, name) {
             this.game = game;
             this.visible = false;
-            this.worldPos = { x: 0, y: 0, z: 5 };
+            this.worldPos = {x: 0, y: 0, z: 5};
             this.name = name;
             this.color = game.config[name].color ?? "#ff00ff";
             this.worldR = game.config[name].radius ?? 0.001;
-            this.screen = { x: 0, y: 0, r: 0 };
+            this.screen = {x: 0, y: 0, r: 0};
         }
+
         draw(ctx) {
             if (!this.visible) return;
             ctx.beginPath();
@@ -437,10 +504,11 @@
             ctx.fillStyle = this.color;
             ctx.fill();
         }
+
         update() {
             const t = this.game.elapsed || 0;
             const kf = this.game.config[this.name].keyframes;
-            const pos = interpolateVec3(t, kf, { x: 0, y: 0, z: 5 });
+            const pos = interpolateVec3(t, kf, {x: 0, y: 0, z: 5});
             this.worldPos = pos;
             const proj = this.game.camera.project(pos);
             this.screen.x = proj.x;
@@ -448,7 +516,10 @@
             this.screen.r = Math.max(0, this.worldR * proj.k);
             this.visible = this.screen.r > 0;
         }
-        syncToElapsed() { this.update(); }
+
+        syncToElapsed() {
+            this.update();
+        }
     }
 
     class Clouds {
@@ -456,6 +527,7 @@
             this.game = game;
             this.earthRef = earthRef;
         }
+
         drawLayer(ctx, img, alpha, cyclesPerSec, invert) {
             const earth = this.earthRef;
             if (!img.complete || !earth.visible || earth.screen.r <= 0) return;
@@ -484,6 +556,7 @@
             ctx.drawImage(img, x2, yOrigin, overlayW + 1, overlayH);
             ctx.restore();
         }
+
         draw(ctx, behind = false) {
             const cloudsCfg = this.game.config.earth.clouds || {};
             const invImg = this.game.assetManager.getCloudOverlayInverted();
@@ -510,18 +583,24 @@
                 }
             }
         }
-        update() {}
-        syncToElapsed() { this.update(); }
+
+        update() {
+        }
+
+        syncToElapsed() {
+            this.update();
+        }
     }
 
     class Moon {
         constructor(game, earthRef) {
             this.game = game;
             this.earthRef = earthRef;
-            this.worldPos = { x: 0, y: 0, z: 5 };
+            this.worldPos = {x: 0, y: 0, z: 5};
             this.worldR = 0;
-            this.screen = { x: 0, y: 0, r: 0 };
+            this.screen = {x: 0, y: 0, r: 0};
         }
+
         drawMoonOverlay(ctx, img, cx, cy, moonSize, cycles) {
             if (!img.complete) return;
             ctx.save();
@@ -538,6 +617,7 @@
             ctx.drawImage(img, xOrigin + offsetPx - overlayW, yOrigin, overlayW, overlayH);
             ctx.restore();
         }
+
         draw(ctx, behind = false) {
             const earth = this.earthRef;
             if (!earth.visible || earth.screen.r <= 0) return;
@@ -548,7 +628,7 @@
             const mx = earth.worldPos.x + Math.sin(angle) * orbit;
             const my = earth.worldPos.y + Math.cos(angle) * orbit * 0.1;
             const mz = earth.worldPos.z;
-            this.worldPos = { x: mx, y: my, z: mz };
+            this.worldPos = {x: mx, y: my, z: mz};
             this.worldR = earth.worldR * 0.15;
             const proj = this.game.camera.project(this.worldPos);
             this.screen.x = proj.x;
@@ -581,8 +661,13 @@
                 });
             }
         }
-        update() {}
-        syncToElapsed() { this.update(); }
+
+        update() {
+        }
+
+        syncToElapsed() {
+            this.update();
+        }
     }
 
     class Earth extends CelestialBody {
@@ -590,12 +675,13 @@
             super(game, "earth");
             this.game = game;
             this.visible = false;
-            this.worldPos = { x: 0, y: 0, z: 6 };
+            this.worldPos = {x: 0, y: 0, z: 6};
             this.worldR = game.config.earth.radius ?? 0.002;
-            this.screen = { x: 0, y: 0, r: 0 };
+            this.screen = {x: 0, y: 0, r: 0};
             this.moon = new Moon(game, this);
             this.clouds = new Clouds(game, this);
         }
+
         draw(ctx) {
             if (!this.visible || this.screen.r <= 0) return;
             const earthImg = this.game.assetManager.getEarthSprite();
@@ -642,6 +728,7 @@
                 color: "rgba(148,210,255,0.2)"
             });
         }
+
         drawChildren(ctx) {
             if (!this.visible || this.screen.r <= 0) return;
             this.moon.draw(ctx, true);
@@ -650,6 +737,7 @@
             this.clouds.draw(ctx, false);
             this.moon.draw(ctx, false);
         }
+
         syncToElapsed() {
             this.update();
             this.moon.update();
@@ -668,23 +756,28 @@
             this._lastVolume = 0.5;
             this.setVolume(0.5);
         }
+
         play() {
             this.audio.play();
             this.isPlaying = true;
         }
+
         pause() {
             this.audio.pause();
             this.isPlaying = false;
         }
+
         toggle() {
             this.isPlaying ? this.pause() : this.play();
         }
+
         setVolume(v) {
             const vol = Math.max(0, Math.min(1, v));
             this.audio.volume = vol;
             if (vol > 0) this._lastVolume = vol;
             this._muted = vol === 0;
         }
+
         setMuted(m) {
             this._muted = !!m;
             if (this._muted) {
@@ -694,28 +787,35 @@
                 this.audio.volume = v;
             }
         }
+
         toggleMute() {
             this.setMuted(!this._muted);
         }
+
         get muted() {
             return this._muted;
         }
+
         get volume() {
             return this.audio.volume || 0;
         }
+
         seekTo(seconds) {
             const a = this.audio;
             const target = Math.max(0, Number(seconds) || 0);
             if (!isNaN(a.duration) && isFinite(a.duration)) a.currentTime = Math.max(0, Math.min(a.duration, target));
             else a.currentTime = target;
         }
+
         getDuration() {
             const d = this.audio.duration;
             return isFinite(d) ? d : 0;
         }
+
         getCurrentTime() {
             return typeof this.audio.currentTime === "number" ? this.audio.currentTime : 0;
         }
+
         addEventListener(type, handler) {
             this.audio.addEventListener(type, handler);
         }
@@ -734,6 +834,7 @@
             this.fsBtn = document.getElementById("fs-toggle");
             this.bindCanvasClickToggle();
         }
+
         initControls() {
             this.btn.addEventListener("click", () => {
                 this.game.play = !this.game.play;
@@ -787,6 +888,7 @@
             this.renderVolumeIcon();
             this.setTimeLabel(0, this.game.config.journeyDuration);
         }
+
         updateFSButton() {
             if (!this.fsBtn) return;
             if (document.fullscreenElement) {
@@ -797,6 +899,7 @@
                     '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>';
             }
         }
+
         updatePlayButton() {
             if (!this.btn) return;
             if (this.game.play) {
@@ -807,6 +910,7 @@
                     '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"/></svg>';
             }
         }
+
         renderVolumeIcon() {
             if (!this.volumeBtn) return;
             const muted = this.game.audio.muted || this.game.audio.volume === 0;
@@ -822,12 +926,15 @@
                     '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/></svg>';
             }
         }
+
         setSliderValue(v) {
             if (this.timeSlider) this.timeSlider.value = v;
         }
+
         setSliderMax(v) {
             if (this.timeSlider) this.timeSlider.max = v;
         }
+
         setTimeLabel(elapsedSec, totalSec) {
             const fmt = (n) => {
                 const s = Math.max(0, Math.floor(n || 0));
@@ -838,6 +945,7 @@
             if (this.timeNowEl) this.timeNowEl.innerHTML = fmt(elapsedSec);
             if (this.timeTotalEl) this.timeTotalEl.innerHTML = fmt(totalSec);
         }
+
         bindCanvasClickToggle() {
             this.canvas.addEventListener("click", () => {
                 this.game.play = !this.game.play;
@@ -875,31 +983,37 @@
             this.ui.initControls();
             this.animate();
         }
+
         bindWindowEvents() {
             window.addEventListener("resize", () => this.resizeCanvas());
         }
+
         syncJourneySecondsFromAudio() {
             const dur = this.audio.getDuration();
             const maxFromConfig = maxSecondInConfig(this.config);
             this.config.journeySeconds = Math.max(this.config.journeySeconds || 0, maxFromConfig, dur);
             this.ui.setSliderMax(this.config.journeyDuration);
         }
+
         syncToElapsed() {
             this.sun.syncToElapsed?.();
             this.mars.syncToElapsed?.();
             this.jupiter.syncToElapsed?.();
             this.earth.syncToElapsed?.();
         }
+
         resizeCanvas() {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.camera.onResize();
             this.stars.onResize();
         }
+
         drawBackground(ctx) {
             ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
+
         update() {
             this.sun.update();
             this.mars.update();
@@ -907,6 +1021,7 @@
             this.earth.update();
             this.stars.update();
         }
+
         draw() {
             this.drawBackground(this.ctx);
             this.stars.drawFar(this.ctx);
@@ -916,6 +1031,7 @@
             this.mars.draw(this.ctx);
             this.jupiter.draw(this.ctx);
         }
+
         animate() {
             this.elapsed = this.audio.getCurrentTime();
             if (this.play) this.update();
@@ -927,7 +1043,9 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => { new SpaceJourneyGame(); });
+    document.addEventListener("DOMContentLoaded", () => {
+        new SpaceJourneyGame();
+    });
 </script>
 </body>
 </html>
