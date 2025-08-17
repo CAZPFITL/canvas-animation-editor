@@ -50,7 +50,7 @@
 <script>
     const CONFIG = {
         journeySeconds: 285,
-        camera: {focal: 600},
+        camera: {focal: 600, anchor: "earth", anchorOffset: {x: 0, y: 0, z: 0}, smooth: 0.2},
         starfield: {
             stopNearAt: 90,
             numFar: 100,
@@ -93,7 +93,6 @@
             color: "#3687ee",
             scrollSpeed: 0.0045,
             keyframes: [
-                // {second: 0, pos: {x: 0, y: 0, z: 0.04}, ease: "expoOut"},
                 {second: 0, pos: {x: 0, y: 0, z: 100}, ease: "expoOut"},
                 {second: 110, pos: {x: 0, y: 0, z: 10}, ease: "cubicInOut"},
                 {second: 126, pos: {x: 0, y: 0, z: 0.2}, ease: "smoothstep"},
@@ -297,6 +296,12 @@
             this.cx = 0;
             this.cy = 0;
             this.minDim = 1;
+            this.anchorName = game.config.camera?.anchor ?? null;
+            this.anchorOffset = game.config.camera?.anchorOffset ?? {x: 0, y: 0, z: 0};
+            this.smooth = Math.max(0, Math.min(1, game.config.camera?.smooth ?? 0));
+            this.origin = {x: 0, y: 0};
+            this._originX = 0;
+            this._originY = 0;
         }
 
         onResize() {
@@ -307,10 +312,43 @@
             this.focal = this.game.config.camera?.focal ?? 600;
         }
 
+        setAnchor(name) {
+            this.anchorName = name || null;
+        }
+
+        setAnchorOffset(o) {
+            this.anchorOffset = {x: o?.x || 0, y: o?.y || 0, z: o?.z || 0};
+        }
+
+        update() {
+            if (!this.anchorName) {
+                this._originX = 0;
+                this._originY = 0;
+                this.origin.x = 0;
+                this.origin.y = 0;
+                return;
+            }
+            const target = this.game.bodyIndex?.[this.anchorName];
+            if (!target) return;
+            const tx = (target.worldPos?.x || 0) + (this.anchorOffset?.x || 0);
+            const ty = (target.worldPos?.y || 0) + (this.anchorOffset?.y || 0);
+            if (this.smooth > 0) {
+                this._originX += (tx - this._originX) * this.smooth;
+                this._originY += (ty - this._originY) * this.smooth;
+            } else {
+                this._originX = tx;
+                this._originY = ty;
+            }
+            this.origin.x = this._originX;
+            this.origin.y = this._originY;
+        }
+
         project(pos) {
-            const z = Math.max(pos.z, 0.001);
+            const relX = pos.x - this.origin.x;
+            const relY = pos.y - this.origin.y;
+            const z = Math.max(pos.z + (this.anchorOffset?.z || 0), 0.001);
             const k = (this.minDim * this.focal) / z;
-            return {x: this.cx + pos.x * k, y: this.cy + pos.y * k, k};
+            return {x: this.cx + relX * k, y: this.cy + relY * k, k};
         }
     }
 
@@ -914,6 +952,8 @@
             this.bodyIndex = {};
             autoExtendJourneySeconds(this.config);
             this.indexBodies();
+            if (this.config.camera?.anchor) this.camera.setAnchor(this.config.camera.anchor);
+            if (this.config.camera?.anchorOffset) this.camera.setAnchorOffset(this.config.camera.anchorOffset);
             this.resizeCanvas();
             this.bindWindowEvents();
             this.ui.initControls();
@@ -944,6 +984,7 @@
             this.mars.syncToElapsed?.();
             this.jupiter.syncToElapsed?.();
             this.earth.syncToElapsed?.();
+            this.camera.update();
         }
 
         resizeCanvas() {
@@ -965,6 +1006,7 @@
             this.earth.update();
             this.earth.moon.update();
             this.stars.update();
+            this.camera.update();
         }
 
         draw() {
