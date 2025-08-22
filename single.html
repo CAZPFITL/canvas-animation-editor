@@ -143,17 +143,17 @@
         earth: {
             radius: 0.0008 / 109,
             color: "#3687ee",
-            scrollSpeed: 0.0045,
+            scrollSpeed: 0.0007,
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 100}, ease: "expoOut"},
                 {second: 118, pos: {x: 0, y: 0, z: 10}, ease: "cubicInOut"},
                 {second: 126.8, pos: {x: 0, y: 0, z: 0.2}, ease: "smoothstep"},
-                {second: 256, pos: {x: 0, y: 0, z: 0.012}},
-                {second: 285, pos: {x: 0, y: 0, z: 0.0095}}
+                {second: 256, pos: {x: 0, y: 0, z: 0.018}},
+                {second: 380, pos: {x: 0, y: 0, z: 0.0095}}
             ],
             clouds: {
-                back: {scrollSpeed: 0.006, alpha: 0.8},
-                front: {scrollSpeed: 0.006, alpha: 0.5}
+                back: {scrollSpeed: 0.0016, alpha: 0.8},
+                front: {scrollSpeed: 0.0016, alpha: 0.5}
             }
         },
         moon: {
@@ -161,10 +161,10 @@
             radiusFactor: 0.15,
             orbit: {
                 parent: "earth",
-                distanceFactor: 25,
+                distanceFactor: 11,
                 inclinationDeg: 6,
                 verticalFlatten: 0.02,
-                angularVelocity: 0.055,
+                angularVelocity: 0.045,
                 initialAngle: -1.75
             },
             scrollSpeed: 0.01
