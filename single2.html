@@ -61,31 +61,83 @@
             focalLength: 128
         },
         sun: {
-            radius: 0.0008,
+            radius: 0.0008/1.6,
             color: "#ffcc00",
+            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 2000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
                 {second: 110},
-                {second: 122, pos: {x: -0.012, y: 0, z: 1.09}}
+                {second: 122, pos: {x: -0.03, y: 0, z: 0}}
+            ]
+        },
+        mercury: {
+            radius: 0.0008 / 4,
+            color: "#b4bdc7",
+            // color: "rgba(0,255,43,1)",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 112, pos: {x: 0, y: 0, z: 1000}},
+                {second: 122.7, pos: {x: 0.005, y: -0.001, z: 0}}
+            ]
+        },
+        venus: {
+            radius: 0.0008 / 2,
+            color: "#f2f2f2",
+            // color: "rgba(0,255,43,1)",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 112, pos: {x: 0, y: 0, z: 1000}},
+                {second: 123, pos: {x: -0.25, y: 0, z: 0}}
             ]
         },
         mars: {
-            radius: 0.0008 / 2,
+            radius: 0.0008 / 2.5,
             color: "#b75741",
+            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 2000}},
                 {second: 105, pos: {x: 0, y: 0, z: 1000}},
-                {second: 116, pos: {x: -0.05, y: 0, z: 2}}
+                {second: 120.5, pos: {x: 0.05, y: -0.002, z: 0}}
             ]
         },
         jupiter: {
             radius: 0.0008,
             color: "#f3e8a3",
+            // color: "rgba(0,255,43,1)",\
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 2000}},
                 {second: 105, pos: {x: 0, y: 0, z: 1000}},
                 {second: 118, pos: {x: -0.3, y: 0, z: 4}}
+            ]
+        },
+        saturn: {
+            radius: 0.0008 / 2,
+            color: "#C8B38B",
+            // color: "rgba(0,255,43,1)",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 105, pos: {x: 0, y: 0, z: 1000}},
+                {second: 116, pos: {x: -0.1, y: 0, z: 0}}
+            ]
+        },
+        uranus: {
+            radius: 0.0008 / 2,
+            color: "#7FFFD4",
+            // color: "rgba(0,255,43,1)",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 2000}},
+                {second: 105, pos: {x: 0, y: 0, z: 1000}},
+                {second: 117, pos: {x: -0.3, y: 0, z: 4}}
+            ]
+        },
+        neptune: {
+            radius: 0.0008 / 2,
+            color: "#bfc4ff",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 200000}},
+                {second: 105, pos: {x: 0, y: 0, z: 1000}},
+                {second: 115.6, pos: {x: 0.02, y: 0.006, z: 0}}
             ]
         },
         earth: {
@@ -94,7 +146,7 @@
             scrollSpeed: 0.0045,
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 100}, ease: "expoOut"},
-                {second: 110, pos: {x: 0, y: 0, z: 10}, ease: "cubicInOut"},
+                {second: 118, pos: {x: 0, y: 0, z: 10}, ease: "cubicInOut"},
                 {second: 126, pos: {x: 0, y: 0, z: 0.2}, ease: "smoothstep"},
                 {second: 256, pos: {x: 0, y: 0, z: 0.012}},
                 {second: 285, pos: {x: 0, y: 0, z: 0.0095}}
@@ -109,9 +161,9 @@
             radiusFactor: 0.15,
             orbit: {
                 parent: "earth",
-                distanceFactor: 5.6,
+                distanceFactor: 25,
                 inclinationDeg: 6,
-                verticalFlatten: 0.09,
+                verticalFlatten: 0.02,
                 angularVelocity: 0.055,
                 initialAngle: -1.75
             },
@@ -318,6 +370,11 @@
 
         setAnchorOffset(o) {
             this.anchorOffset = {x: o?.x || 0, y: o?.y || 0, z: o?.z || 0};
+        }
+
+        isInFront(pos) {
+            const z = (pos?.z || 0) + (this.anchorOffset?.z || 0);
+            return z > 0;
         }
 
         update() {
@@ -546,6 +603,12 @@
             } else {
                 this.worldR = cfg.radius ?? this.worldR;
             }
+
+            if (!this.game.camera.isInFront(this.worldPos)) {
+                this.visible = false;
+                return;
+            }
+
             const proj = this.game.camera.project(this.worldPos);
             this.screen.x = proj.x;
             this.screen.y = proj.y;
@@ -943,8 +1006,13 @@
             this.camera = new Camera(this);
             this.stars = new StarField(this);
             this.sun = new CelestialBody(this, "sun");
+            this.mercury = new CelestialBody(this, "mercury");
+            this.venus = new CelestialBody(this, "venus");
             this.mars = new CelestialBody(this, "mars");
             this.jupiter = new CelestialBody(this, "jupiter");
+            this.saturn = new CelestialBody(this, "saturn");
+            this.uranus = new CelestialBody(this, "uranus");
+            this.neptune = new CelestialBody(this, "neptune");
             this.earth = new Earth(this);
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
@@ -962,8 +1030,13 @@
 
         indexBodies() {
             this.bodyIndex["sun"] = this.sun;
+            this.bodyIndex["mercury"] = this.mercury;
+            this.bodyIndex["venus"] = this.venus;
             this.bodyIndex["mars"] = this.mars;
             this.bodyIndex["jupiter"] = this.jupiter;
+            this.bodyIndex["saturn"] = this.saturn;
+            this.bodyIndex["uranus"] = this.uranus;
+            this.bodyIndex["neptune"] = this.neptune;
             this.bodyIndex["earth"] = this.earth;
             this.bodyIndex["moon"] = this.earth.moon;
         }
@@ -981,8 +1054,13 @@
 
         syncToElapsed() {
             this.sun.syncToElapsed?.();
+            this.mercury.syncToElapsed?.();
+            this.venus.syncToElapsed?.();
             this.mars.syncToElapsed?.();
             this.jupiter.syncToElapsed?.();
+            this.saturn.syncToElapsed?.();
+            this.uranus.syncToElapsed?.();
+            this.neptune.syncToElapsed?.();
             this.earth.syncToElapsed?.();
             this.camera.update();
         }
@@ -1001,8 +1079,13 @@
 
         update() {
             this.sun.update();
+            this.mercury.update();
+            this.venus.update();
             this.mars.update();
             this.jupiter.update();
+            this.saturn.update();
+            this.uranus.update();
+            this.neptune.update();
             this.earth.update();
             this.earth.moon.update();
             this.stars.update();
@@ -1015,8 +1098,13 @@
             this.stars.drawNear(this.ctx);
             if (this.earth.visible && this.earth.screen.r > 0) this.earth.drawChildren(this.ctx);
             this.sun.draw(this.ctx);
+            this.mercury.draw(this.ctx);
+            this.venus.draw(this.ctx);
             this.mars.draw(this.ctx);
             this.jupiter.draw(this.ctx);
+            this.saturn.draw(this.ctx);
+            this.uranus.draw(this.ctx);
+            this.neptune.draw(this.ctx);
         }
 
         animate() {
