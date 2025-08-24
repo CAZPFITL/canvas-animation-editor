@@ -51,19 +51,9 @@
     const CONFIG = {
         journeySeconds: 285,
         camera: {focal: 600, anchor: "earth", anchorOffset: {x: 0, y: 0, z: 0}, smooth: 0.2},
-        starfield: {
-            stopNearAt: 90,
-            numFar: 100,
-            numNear: 200,
-            farSpeedRange: [0.001, 0.0025],
-            nearSpeedRange: [1.0, 5.0],
-            speedScale: 0.05,
-            focalLength: 128
-        },
         sun: {
-            radius: 0.0008/1.6,
+            radius: 0.0008 / 1.6,
             color: "#ffcc00",
-            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -74,7 +64,6 @@
         mercury: {
             radius: 0.0008 / 4,
             color: "#b4bdc7",
-            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -84,7 +73,6 @@
         venus: {
             radius: 0.0008 / 2,
             color: "#f2f2f2",
-            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -94,7 +82,6 @@
         mars: {
             radius: 0.0008 / 2.5,
             color: "#b75741",
-            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -104,7 +91,6 @@
         jupiter: {
             radius: 0.0008,
             color: "#f3e8a3",
-            // color: "rgba(0,255,43,1)",\
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -114,7 +100,6 @@
         saturn: {
             radius: 0.0008 / 2,
             color: "#C8B38B",
-            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -124,7 +109,6 @@
         uranus: {
             radius: 0.0008 / 2,
             color: "#7FFFD4",
-            // color: "rgba(0,255,43,1)",
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 20000}},
                 {second: 100, pos: {x: 0, y: 0, z: 1000}},
@@ -196,9 +180,9 @@
         return Easings.linear;
     }
 
-    function autoExtendJourneySeconds(cfg) {
-        const maxS = maxSecondInConfig(cfg);
-        if (typeof cfg.journeySeconds !== "number" || cfg.journeySeconds < maxS) cfg.journeySeconds = maxS;
+    function autoExtendJourneySeconds() {
+        const maxS = maxSecondInConfig(CONFIG);
+        if (typeof CONFIG.journeySeconds !== "number" || CONFIG.journeySeconds < maxS) CONFIG.journeySeconds = maxS;
     }
 
     function maxSecondInConfig(obj) {
@@ -344,13 +328,13 @@
     class Camera {
         constructor(game) {
             this.game = game;
-            this.focal = game.config.camera?.focal ?? 600;
+            this.focal = CONFIG.camera?.focal ?? 600;
             this.cx = 0;
             this.cy = 0;
             this.minDim = 1;
-            this.anchorName = game.config.camera?.anchor ?? null;
-            this.anchorOffset = game.config.camera?.anchorOffset ?? {x: 0, y: 0, z: 0};
-            this.smooth = Math.max(0, Math.min(1, game.config.camera?.smooth ?? 0));
+            this.anchorName = CONFIG.camera?.anchor ?? null;
+            this.anchorOffset = CONFIG.camera?.anchorOffset ?? {x: 0, y: 0, z: 0};
+            this.smooth = Math.max(0, Math.min(1, CONFIG.camera?.smooth ?? 0));
             this.origin = {x: 0, y: 0};
             this._originX = 0;
             this._originY = 0;
@@ -361,7 +345,7 @@
             this.cx = c.width / 2;
             this.cy = c.height / 2;
             this.minDim = Math.min(c.width, c.height);
-            this.focal = this.game.config.camera?.focal ?? 600;
+            this.focal = CONFIG.camera?.focal ?? 600;
         }
 
         setAnchor(name) {
@@ -409,160 +393,11 @@
         }
     }
 
-    class StarField {
-        constructor(game) {
-            this.game = game;
-            this.farStars = [];
-            this.nearStars = [];
-            this.width = 1;
-            this.height = 1;
-            this.centerX = 0.5;
-            this.centerY = 0.5;
-            this.focal = CONFIG.starfield.focalLength;
-            this.cutoffActivated = false;
-            this._initStars();
-            this.onResize();
-        }
-
-        _randCenteredNorm() {
-            return (Math.random() - 0.5) * (1 + Math.random() * 0.3);
-        }
-
-        _makeStar(isNear) {
-            const cfg = this.game.config.starfield;
-            const [minS, maxS] = isNear ? cfg.nearSpeedRange : cfg.farSpeedRange;
-            return {
-                rx: this._randCenteredNorm(),
-                ry: this._randCenteredNorm(),
-                speed: minS + Math.random() * (maxS - minS),
-                phase: Math.random(),
-                frozen: false,
-                tFreeze: 0,
-                zFreeze: 0,
-                dead: false
-            };
-        }
-
-        _initStars() {
-            const cfg = this.game.config.starfield;
-            this.farStars = Array.from({length: cfg.numFar}, () => this._makeStar(false));
-            this.nearStars = Array.from({length: cfg.numNear}, () => this._makeStar(true));
-        }
-
-        onResize() {
-            const c = this.game.canvas;
-            this.width = c.width;
-            this.height = c.height;
-            this.centerX = this.width / 2;
-            this.centerY = this.height / 2;
-            this.zMax = Math.max(1, this.width / 2);
-            this.zMin = Math.max(0.001 * this.width, 1);
-            this.zRange = this.zMax - this.zMin;
-            this.focal = this.game.config.starfield.focalLength;
-        }
-
-        _zAt(star, t) {
-            const speed = star.speed * this.game.config.starfield.speedScale;
-            const u = ((t * speed + star.phase) % 1 + 1) % 1;
-            return this.zMin + (1 - u) * this.zRange;
-        }
-
-        _sizeAt(star, z) {
-            const base = Math.max(0.5, (0.5 - z / this.zMax) * 5);
-            const proximity = star.speed / 8;
-            const boost = proximity > 0.5 ? 1 + ((this.zMax - z) / this.zMax) * proximity : 1;
-            return Math.max(base * boost, 0.5);
-        }
-
-        _project(star, z) {
-            const k = this.focal / z;
-            const sx = star.rx * this.width * k + this.centerX;
-            const sy = star.ry * this.height * k + this.centerY;
-            return {sx, sy};
-        }
-
-        _drawSet(ctx, stars, t) {
-            for (let i = 0; i < stars.length; i++) {
-                const s = stars[i];
-                const z = this._zAt(s, t);
-                const {sx, sy} = this._project(s, z);
-                if (sx >= 0 && sx < this.width && sy >= 0 && sy < this.height) {
-                    ctx.beginPath();
-                    ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fill();
-                }
-            }
-        }
-
-        _drawSetFreezeOut(ctx, t) {
-            const margin = Math.max(this.width, this.height) * 0.1;
-            const vFactor = this.zRange;
-            for (let i = 0; i < this.nearStars.length; i++) {
-                const s = this.nearStars[i];
-                if (s.dead || !s.frozen) continue;
-                const dt = Math.max(0, t - s.tFreeze);
-                const v = s.speed * this.game.config.starfield.speedScale * vFactor;
-                let z = s.zFreeze - v * dt;
-                z = Math.max(this.zMin * 0.01, z);
-                const {sx, sy} = this._project(s, z);
-                const off = sx < -margin || sx > this.width + margin || sy < -margin || sy > this.height + margin;
-                if (off) {
-                    s.dead = true;
-                    continue;
-                }
-                ctx.beginPath();
-                ctx.arc(sx, sy, this._sizeAt(s, z) / 2, 0, Math.PI * 2);
-                ctx.fillStyle = "#ffffff";
-                ctx.fill();
-            }
-        }
-
-        drawFar(ctx) {
-            const t = this.game.elapsed || 0;
-            this._drawSet(ctx, this.farStars, t);
-        }
-
-        drawNear(ctx) {
-            const t = this.game.elapsed || 0;
-            if (!this.cutoffActivated) {
-                const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
-                if (t < cut) {
-                    this._drawSet(ctx, this.nearStars, t);
-                    return;
-                }
-            }
-            this._drawSetFreezeOut(ctx, t);
-        }
-
-        update() {
-            const t = this.game.elapsed || 0;
-            const cut = this.game.config.starfield?.stopNearAt ?? Infinity;
-            if (!this.cutoffActivated && t >= cut) {
-                this.cutoffActivated = true;
-                for (let i = 0; i < this.nearStars.length; i++) {
-                    const s = this.nearStars[i];
-                    s.frozen = true;
-                    s.tFreeze = cut;
-                    s.zFreeze = this._zAt(s, cut);
-                    s.dead = false;
-                }
-            } else if (this.cutoffActivated && t < cut) {
-                this.cutoffActivated = false;
-                for (let i = 0; i < this.nearStars.length; i++) {
-                    const s = this.nearStars[i];
-                    s.frozen = false;
-                    s.dead = false;
-                }
-            }
-        }
-    }
-
     class CelestialBody {
         constructor(game, name) {
             this.game = game;
             this.name = name;
-            const cfg = game.config[name] || {};
+            const cfg = CONFIG[name] || {};
             this.visible = false;
             this.worldPos = {x: 0, y: 0, z: 5};
             this.color = cfg.color ?? "#ff00ff";
@@ -590,7 +425,7 @@
         }
 
         update() {
-            const cfg = this.game.config[this.name] || {};
+            const cfg = CONFIG[this.name] || {};
             if (this.keyframes && this.keyframes.length) {
                 this.worldPos = interpolateVec3(this.game.elapsed || 0, this.keyframes, {x: 0, y: 0, z: 5});
             } else if (this.orbit && this.orbit.parent) {
@@ -603,12 +438,10 @@
             } else {
                 this.worldR = cfg.radius ?? this.worldR;
             }
-
             if (!this.game.camera.isInFront(this.worldPos)) {
                 this.visible = false;
                 return;
             }
-
             const proj = this.game.camera.project(this.worldPos);
             this.screen.x = proj.x;
             this.screen.y = proj.y;
@@ -643,7 +476,7 @@
             ctx.arc(earth.screen.x, earth.screen.y, earth.screen.r / 0.98, 0, Math.PI * 2);
             ctx.clip();
             ctx.globalAlpha = alpha;
-            const tilt = (this.game.config.earthTiltDeg || 0) * (Math.PI / 180);
+            const tilt = (CONFIG.earthTiltDeg || 0) * (Math.PI / 180);
             ctx.translate(earth.screen.x, earth.screen.y);
             ctx.rotate(tilt);
             ctx.imageSmoothingEnabled = false;
@@ -665,7 +498,7 @@
         }
 
         draw(ctx, behind = false) {
-            const cloudsCfg = this.game.config.earth.clouds || {};
+            const cloudsCfg = CONFIG.earth.clouds || {};
             const invImg = this.game.assetManager.getCloudOverlayInverted();
             const img = this.game.assetManager.getCloudOverlay();
             if (behind) {
@@ -686,7 +519,7 @@
     class Moon extends CelestialBody {
         constructor(game) {
             super(game, "moon");
-            const cfg = game.config.moon || {};
+            const cfg = CONFIG.moon || {};
             this.scrollSpeed = cfg.scrollSpeed ?? 0.01;
         }
 
@@ -715,7 +548,7 @@
             if (behind !== isBehind) return;
             const cycles = ((this.scrollSpeed ?? 0.5) * (this.game.elapsed || 0)) % 1;
             this.drawMoonOverlay(this.game.ctx, this.game.assetManager.getMoonOverlay(), this.screen.x, this.screen.y, this.screen.r * 2, cycles);
-            const tilt = (this.game.config.earthTiltDeg || 0) * (Math.PI / 180);
+            const tilt = (CONFIG.earthTiltDeg || 0) * (Math.PI / 180);
             const baseX = -0.2;
             const baseY = 0.2;
             const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
@@ -752,7 +585,7 @@
             ctx.beginPath();
             ctx.arc(this.screen.x, this.screen.y, this.screen.r, 0, Math.PI * 2);
             ctx.clip();
-            const tilt = (this.game.config.earthTiltDeg || 0) * (Math.PI / 180);
+            const tilt = (CONFIG.earthTiltDeg || 0) * (Math.PI / 180);
             ctx.translate(this.screen.x, this.screen.y);
             ctx.rotate(tilt);
             const diameter = this.screen.r * 2;
@@ -761,7 +594,7 @@
             const overlayH = diameter;
             const xOrigin = -overlayW / 2;
             const yOrigin = -overlayH / 2;
-            const cycles = ((this.game.config.earth.scrollSpeed ?? 0) * (this.game.elapsed || 0)) % 1;
+            const cycles = ((CONFIG.earth.scrollSpeed ?? 0) * (this.game.elapsed || 0)) % 1;
             const offsetPx = (cycles % 1) * overlayW;
             const x1 = xOrigin + offsetPx;
             const x2 = x1 - overlayW;
@@ -910,7 +743,7 @@
             }
             if (this.timeSlider) {
                 this.timeSlider.min = 0;
-                this.timeSlider.max = this.game.config.journeyDuration;
+                this.timeSlider.max = CONFIG.journeyDuration;
                 this.timeSlider.step = 0.01;
                 this.timeSlider.value = 0;
                 const onScrub = sec => {
@@ -937,7 +770,7 @@
             this.game.audio.addEventListener("loadedmetadata", () => this.game.syncJourneySecondsFromAudio());
             this.updatePlayButton();
             this.renderVolumeIcon();
-            this.setTimeLabel(0, this.game.config.journeyDuration);
+            this.setTimeLabel(0, CONFIG.journeyDuration);
         }
 
         updateFSButton() {
@@ -1000,11 +833,9 @@
         constructor() {
             this.canvas = document.getElementById("viaje");
             this.ctx = this.canvas.getContext("2d");
-            this.config = CONFIG;
             this.play = false;
             this.assetManager = new AssetManager();
             this.camera = new Camera(this);
-            this.stars = new StarField(this);
             this.sun = new CelestialBody(this, "sun");
             this.mercury = new CelestialBody(this, "mercury");
             this.venus = new CelestialBody(this, "venus");
@@ -1018,10 +849,10 @@
             this.ui = new UI(this);
             this.elapsed = 0;
             this.bodyIndex = {};
-            autoExtendJourneySeconds(this.config);
+            autoExtendJourneySeconds();
             this.indexBodies();
-            if (this.config.camera?.anchor) this.camera.setAnchor(this.config.camera.anchor);
-            if (this.config.camera?.anchorOffset) this.camera.setAnchorOffset(this.config.camera.anchorOffset);
+            if (CONFIG.camera?.anchor) this.camera.setAnchor(CONFIG.camera.anchor);
+            if (CONFIG.camera?.anchorOffset) this.camera.setAnchorOffset(CONFIG.camera.anchorOffset);
             this.resizeCanvas();
             this.bindWindowEvents();
             this.ui.initControls();
@@ -1047,9 +878,9 @@
 
         syncJourneySecondsFromAudio() {
             const dur = this.audio.getDuration();
-            const maxFromConfig = maxSecondInConfig(this.config);
-            this.config.journeySeconds = Math.max(this.config.journeySeconds || 0, maxFromConfig, dur);
-            this.ui.setSliderMax(this.config.journeyDuration);
+            const maxFromConfig = maxSecondInConfig(CONFIG);
+            CONFIG.journeySeconds = Math.max(CONFIG.journeySeconds || 0, maxFromConfig, dur);
+            this.ui.setSliderMax(CONFIG.journeyDuration);
         }
 
         syncToElapsed() {
@@ -1069,7 +900,6 @@
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
             this.camera.onResize();
-            this.stars.onResize();
         }
 
         drawBackground(ctx) {
@@ -1088,14 +918,11 @@
             this.neptune.update();
             this.earth.update();
             this.earth.moon.update();
-            this.stars.update();
             this.camera.update();
         }
 
         draw() {
             this.drawBackground(this.ctx);
-            this.stars.drawFar(this.ctx);
-            this.stars.drawNear(this.ctx);
             if (this.earth.visible && this.earth.screen.r > 0) this.earth.drawChildren(this.ctx);
             this.sun.draw(this.ctx);
             this.mercury.draw(this.ctx);
@@ -1111,7 +938,7 @@
             this.elapsed = this.audio.getCurrentTime();
             if (this.play) this.update(); else this.syncToElapsed();
             this.ui.setSliderValue(this.elapsed);
-            this.ui.setTimeLabel(this.elapsed, this.config.journeyDuration);
+            this.ui.setTimeLabel(this.elapsed, CONFIG.journeyDuration);
             this.draw();
             requestAnimationFrame(() => this.animate());
         }
