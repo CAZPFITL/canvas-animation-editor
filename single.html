@@ -65,12 +65,12 @@
                         speed: 8,
                         focalAngleDeg: 0,
                         focalRadius: 0,
-                        twinkle: 0.01,
+                        twinkle: 0.1,
                         trail: 0,
                         spawnSpread: Math.PI / 1.5,
                         ease: "linear"
                     },
-                    {second: 100, speed: 6, ease: "linear"},
+                    {second: 120, speed: 6, ease: "linear"},
                     {second: 126.8, speed: 2, ease: "linear"}
                 ]
             },
@@ -92,7 +92,7 @@
                         spawnSpread: Math.PI / 0.3,
                         ease: "linear"
                     },
-                    {second: 100, speed: 100, ease: "linear"},
+                    {second: 120, speed: 100, ease: "linear"},
                     {second: 126.8, speed: 4, ease: "linear"}
                 ]
             },
@@ -120,14 +120,14 @@
             {
                 name: "near",
                 shape: "square",
-                zRange: [20, 12000],
+                zRange: [20, 22000],
                 behindBodies: false,
                 keyframes: [
                     {
                         second: 0,
                         count: 160,
-                        size: 2.2,
-                        speed: 2500,
+                        size: 2,
+                        speed: 4000,
                         focalAngleDeg: 0,
                         focalRadius: 0,
                         twinkle: 0,
@@ -141,14 +141,14 @@
             {
                 name: "nearest",
                 shape: "square",
-                zRange: [20, 12000],
+                zRange: [20, 22000],
                 behindBodies: false,
                 keyframes: [
                     {
                         second: 0,
                         count: 80,
-                        size: 2.4,
-                        speed: 6000,
+                        size: 2.2,
+                        speed: 8000,
                         focalAngleDeg: 0,
                         focalRadius: 0,
                         twinkle: 0,
@@ -162,14 +162,14 @@
             {
                 name: "closer",
                 shape: "square",
-                zRange: [20, 12000],
+                zRange: [20, 22000],
                 behindBodies: false,
                 keyframes: [
                     {
                         second: 0,
                         count: 40,
-                        size: 2.6,
-                        speed: 6000,
+                        size: 2.4,
+                        speed: 8000,
                         focalAngleDeg: 0,
                         focalRadius: 0,
                         twinkle: 0,
@@ -182,78 +182,80 @@
             }
         ],
         sun: {
-            radius: 0.0008 / 1.6, color: "#ffcc00",
+            radius: 0.001, color: "#ffcc00",
             keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 0, pos: {x: 0, y: 0, z: 1e5}},
+                {second: 90, pos: {z: 1000}, ease: "linear"},
+                {second: 102, pos: {z: 500}, ease: "linear"},
+                {second: 104, pos: {z: 300}, ease: "linear"},
                 {second: 110},
                 {second: 122, pos: {x: -0.03, y: 0, z: 0}}
             ]
         },
-        mercury: {
-            radius: 0.0008 / 4, color: "#b4bdc7",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 122.7, pos: {x: 0.005, y: -0.001, z: 0}}
-            ]
-        },
-        venus: {
-            radius: 0.0008 / 2, color: "#f2f2f2",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 123, pos: {x: -0.25, y: 0, z: 0}}
-            ]
-        },
-        mars: {
-            radius: 0.0008 / 2.5, color: "#b75741",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 120.5, pos: {x: 0.05, y: -0.002, z: 0}}
-            ]
-        },
-        jupiter: {
-            radius: 0.0008, color: "#f3e8a3",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 118, pos: {x: -0.3, y: 0, z: 4}}
-            ]
-        },
-        saturn: {
-            radius: 0.0008 / 2, color: "#C8B38B",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 116, pos: {x: -0.1, y: 0, z: 0}}
-            ]
-        },
-        uranus: {
-            radius: 0.0008 / 2, color: "#7FFFD4",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 117, pos: {x: -0.3, y: 0, z: 4}}
-            ]
-        },
-        neptune: {
-            radius: 0.0008 / 2, color: "#bfc4ff",
-            keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 20000}},
-                {second: 100, pos: {x: 0, y: 0, z: 1000}},
-                {second: 115.6, pos: {x: 0.02, y: 0.006, z: 0}}
-            ]
-        },
+        // mercury: {
+        //     radius: 0.0008 / 4, color: "#b4bdc7",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 122.7, pos: {x: 0.005, y: -0.001, z: 0}}
+        //     ]
+        // },
+        // venus: {
+        //     radius: 0.0008 / 2, color: "#f2f2f2",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 123, pos: {x: -0.25, y: 0, z: 0}}
+        //     ]
+        // },
+        // mars: {
+        //     radius: 0.0008 / 2.5, color: "#b75741",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 120.5, pos: {x: 0.05, y: -0.002, z: 0}}
+        //     ]
+        // },
+        // jupiter: {
+        //     radius: 0.0008, color: "#f3e8a3",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 118, pos: {x: -0.3, y: 0, z: 4}}
+        //     ]
+        // },
+        // saturn: {
+        //     radius: 0.0008 / 2, color: "#C8B38B",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 116, pos: {x: -0.1, y: 0, z: 0}}
+        //     ]
+        // },
+        // uranus: {
+        //     radius: 0.0008 / 2, color: "#7FFFD4",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 117, pos: {x: -0.3, y: 0, z: 4}}
+        //     ]
+        // },
+        // neptune: {
+        //     radius: 0.0008 / 2, color: "#bfc4ff",
+        //     keyframes: [
+        //         {second: 0, pos: {x: 0, y: 0, z: 20000}},
+        //         {second: 100, pos: {x: 0, y: 0, z: 1000}},
+        //         {second: 115.6, pos: {x: 0.02, y: 0.006, z: 0}}
+        //     ]
+        // },
         earth: {
             radius: 0.0008 / 109, color: "#3687ee", scrollSpeed: 0.0007,
             keyframes: [
-                {second: 0, pos: {x: 0, y: 0, z: 100}, ease: "expoOut"},
-                {second: 118, pos: {x: 0, y: 0, z: 10}, ease: "cubicInOut"},
-                {second: 126.8, pos: {x: 0, y: 0, z: 0.2}, ease: "smoothstep"},
-                {second: 256, pos: {x: 0, y: 0, z: 0.018}},
-                {second: 380, pos: {x: 0, y: 0, z: 0.0095}}
+                {second: 0, pos: {z: 100}, ease: "expoOut"},
+                {second: 118, pos: {z: 10}, ease: "cubicInOut"},
+                {second: 126.8, pos: {z: 0.2}, ease: "smoothstep"},
+                {second: 256, pos: {z: 0.018}},
+                {second: 380, pos: {z: 0.0095}}
             ],
             clouds: {back: {scrollSpeed: 0.0016, alpha: 0.8}, front: {scrollSpeed: 0.0016, alpha: 0.5}}
         },
@@ -321,24 +323,34 @@
     }
 
     function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
-        const withPos = (keyframes || []).filter(k => k.pos && typeof k.second === "number").sort((a, b) => a.second - b.second);
-        if (!withPos.length) return fallback;
-        if (elapsed <= withPos[0].second) return withPos[0].pos;
-        if (elapsed >= withPos[withPos.length - 1].second) return withPos[withPos.length - 1].pos;
-        for (let i = 0; i < withPos.length - 1; i++) {
-            const k1 = withPos[i], k2 = withPos[i + 1];
-            if (elapsed >= k1.second && elapsed <= k2.second) {
-                const rawT = (elapsed - k1.second) / (k2.second - k1.second || 1);
-                const ease = getEaseFn(k1, k2);
-                const t = ease(Math.max(0, Math.min(1, rawT)));
-                return {
-                    x: k1.pos.x + (k2.pos.x - k1.pos.x) * t,
-                    y: k1.pos.y + (k2.pos.y - k1.pos.y) * t,
-                    z: k1.pos.z + (k2.pos.z - k1.pos.z) * t
+        const kf = (keyframes || []).filter(k => typeof k.second === "number").sort((a, b) => a.second - b.second);
+        if (!kf.length) return fallback;
+        const has = (k, c) => k && k.pos && Object.prototype.hasOwnProperty.call(k.pos, c) && typeof k.pos[c] === "number";
+
+        function compAt(t, c) {
+            let prev = null, next = null;
+            for (let i = 0; i < kf.length; i++) {
+                const k = kf[i];
+                if (k.second <= t && has(k, c)) prev = k;
+                if (k.second >= t && has(k, c)) {
+                    next = k;
+                    break;
                 }
             }
+            if (prev && next && prev !== next) {
+                const ease = getEaseFn(prev, next);
+                const span = Math.max(1e-6, next.second - prev.second);
+                const raw = (t - prev.second) / span;
+                const tt = ease(Math.max(0, Math.min(1, raw)));
+                return prev.pos[c] + (next.pos[c] - prev.pos[c]) * tt;
+            }
+            if (prev && has(prev, c)) return prev.pos[c];
+            if (next && has(next, c)) return next.pos[c];
+            for (let i = kf.length - 1; i >= 0; i--) if (has(kf[i], c)) return kf[i].pos[c];
+            return fallback[c];
         }
-        return withPos[withPos.length - 1].pos
+
+        return {x: compAt(elapsed, "x"), y: compAt(elapsed, "y"), z: compAt(elapsed, "z")};
     }
 
     function applyLighting(ctx, cx, cy, radius, options = {}) {
@@ -481,7 +493,7 @@
             const cfg = CONFIG[name] || {};
             this.visible = false;
             this.worldPos = {x: 0, y: 0, z: 5};
-            this.color = cfg.color ?? "#ff00ff";
+            this.color = cfg.color ?? 'transparent'//"#ff00ff";
             this.worldR = cfg.radius ?? 0.001;
             this.screen = {x: 0, y: 0, r: 0};
             this.keyframes = cfg.keyframes || null;
