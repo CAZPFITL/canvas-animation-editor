@@ -8,7 +8,7 @@
     <style>
         #viaje {
             image-rendering: crisp-edges;
-            image-rendering: pixelated
+            image-rendering: pixelated;
         }
     </style>
 </head>
@@ -51,127 +51,203 @@
     const CONFIG = {
         journeySeconds: 285,
         camera: {focal: 600},
-        starFields: {
-            far: {
+        starFields: [
+            {
+                name: "bg",
                 shape: "circle",
                 zRange: [4000, 22000],
+                behindBodies: true,
                 keyframes: [
                     {
                         second: 0,
-                        count: 800,
-                        size: 2,
+                        count: 500,
+                        size: 0.8,
+                        speed: 8,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0.01,
+                        trail: 0,
+                        spawnSpread: Math.PI / 1.5,
+                        ease: "linear"
+                    },
+                    {second: 100, speed: 6, ease: "linear"},
+                    {second: 126.8, speed: 2, ease: "linear"}
+                ]
+            },
+            {
+                name: "far",
+                shape: "circle",
+                zRange: [4000, 22000],
+                behindBodies: true,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 400,
+                        size: 1.5,
                         speed: 200,
                         focalAngleDeg: 0,
-                        focalRadius: 0.0,
+                        focalRadius: 0,
                         twinkle: 0.01,
                         trail: 0,
                         spawnSpread: Math.PI / 0.3,
                         ease: "linear"
-                    }, {
-                        second: 100,
-                        speed: 100,
-                        ease: "linear"
-                    }, {
-                        second: 126.8,
-                        speed: 4,
-                        ease: "linear"
-                    }
+                    },
+                    {second: 100, speed: 100, ease: "linear"},
+                    {second: 126.8, speed: 4, ease: "linear"}
                 ]
             },
-            near: {
+            {
+                name: "middle",
                 shape: "square",
-                zRange: [20, 12000],
+                zRange: [20, 22000],
+                behindBodies: false,
                 keyframes: [
                     {
                         second: 0,
-                        count: 200,
-                        size: 2,
-                        speed: 5000,
+                        count: 300,
+                        size: 2.0,
+                        speed: 2000,
                         focalAngleDeg: 0,
-                        focalRadius: 0.0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: 0.8,
+                        spawnSpread: Math.PI / 0.2,
+                        ease: "linear"
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            },
+            {
+                name: "near",
+                shape: "square",
+                zRange: [20, 12000],
+                behindBodies: false,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 160,
+                        size: 2.2,
+                        speed: 2500,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: 1.5,
+                        spawnSpread: Math.PI / 0.5,
+                        ease: "linear"
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            },
+            {
+                name: "nearest",
+                shape: "square",
+                zRange: [20, 12000],
+                behindBodies: false,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 80,
+                        size: 2.4,
+                        speed: 6000,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
                         twinkle: 0,
                         trail: 3,
                         spawnSpread: Math.PI,
                         ease: "linear"
                     },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            },
+            {
+                name: "closer",
+                shape: "square",
+                zRange: [20, 12000],
+                behindBodies: false,
+                keyframes: [
                     {
-                        second: 100,
-                        count: 0,
-                        trail: 0,
-                        speed: 400,
+                        second: 0,
+                        count: 40,
+                        size: 2.6,
+                        speed: 6000,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: 3,
+                        spawnSpread: Math.PI / 5,
                         ease: "linear"
-                    }
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
                 ]
             }
-        },
+        ],
         sun: {
-            radius: 0.0008 / 1.6,
-            color: "#ffcc00",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 110}, {second: 122, pos: {x: -0.03, y: 0, z: 0}}]
+            radius: 0.0008 / 1.6, color: "#ffcc00",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 110},
+                {second: 122, pos: {x: -0.03, y: 0, z: 0}}
+            ]
         },
         mercury: {
-            radius: 0.0008 / 4,
-            color: "#b4bdc7",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 122.7, pos: {x: 0.005, y: -0.001, z: 0}}]
+            radius: 0.0008 / 4, color: "#b4bdc7",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 122.7, pos: {x: 0.005, y: -0.001, z: 0}}
+            ]
         },
         venus: {
-            radius: 0.0008 / 2,
-            color: "#f2f2f2",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 123, pos: {x: -0.25, y: 0, z: 0}}]
+            radius: 0.0008 / 2, color: "#f2f2f2",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 123, pos: {x: -0.25, y: 0, z: 0}}
+            ]
         },
         mars: {
-            radius: 0.0008 / 2.5,
-            color: "#b75741",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 120.5, pos: {x: 0.05, y: -0.002, z: 0}}]
+            radius: 0.0008 / 2.5, color: "#b75741",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 120.5, pos: {x: 0.05, y: -0.002, z: 0}}
+            ]
         },
         jupiter: {
-            radius: 0.0008,
-            color: "#f3e8a3",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 118, pos: {x: -0.3, y: 0, z: 4}}]
+            radius: 0.0008, color: "#f3e8a3",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 118, pos: {x: -0.3, y: 0, z: 4}}
+            ]
         },
         saturn: {
-            radius: 0.0008 / 2,
-            color: "#C8B38B",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 116, pos: {x: -0.1, y: 0, z: 0}}]
+            radius: 0.0008 / 2, color: "#C8B38B",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 116, pos: {x: -0.1, y: 0, z: 0}}
+            ]
         },
         uranus: {
-            radius: 0.0008 / 2,
-            color: "#7FFFD4",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 117, pos: {x: -0.3, y: 0, z: 4}}]
+            radius: 0.0008 / 2, color: "#7FFFD4",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 117, pos: {x: -0.3, y: 0, z: 4}}
+            ]
         },
         neptune: {
-            radius: 0.0008 / 2,
-            color: "#bfc4ff",
-            keyframes: [{second: 0, pos: {x: 0, y: 0, z: 20000}}, {
-                second: 100,
-                pos: {x: 0, y: 0, z: 1000}
-            }, {second: 115.6, pos: {x: 0.02, y: 0.006, z: 0}}]
+            radius: 0.0008 / 2, color: "#bfc4ff",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 115.6, pos: {x: 0.02, y: 0.006, z: 0}}
+            ]
         },
         earth: {
-            radius: 0.0008 / 109,
-            color: "#3687ee",
-            scrollSpeed: 0.0007,
+            radius: 0.0008 / 109, color: "#3687ee", scrollSpeed: 0.0007,
             keyframes: [
                 {second: 0, pos: {x: 0, y: 0, z: 100}, ease: "expoOut"},
                 {second: 118, pos: {x: 0, y: 0, z: 10}, ease: "cubicInOut"},
@@ -179,18 +255,10 @@
                 {second: 256, pos: {x: 0, y: 0, z: 0.018}},
                 {second: 380, pos: {x: 0, y: 0, z: 0.0095}}
             ],
-            clouds: {
-                back: {
-                    scrollSpeed: 0.0016, alpha: 0.8
-                },
-                front: {
-                    scrollSpeed: 0.0016, alpha: 0.5
-                }
-            }
+            clouds: {back: {scrollSpeed: 0.0016, alpha: 0.8}, front: {scrollSpeed: 0.0016, alpha: 0.5}}
         },
         moon: {
-            color: "#bbbbbb",
-            radiusFactor: 0.15,
+            color: "#bbbbbb", radiusFactor: 0.15,
             orbit: {
                 parent: "earth",
                 distanceFactor: 11,
@@ -203,7 +271,7 @@
         },
         earthTiltDeg: 4,
         get journeyDuration() {
-            return this.journeySeconds ?? 0
+            return this.journeySeconds ?? 0;
         }
     };
 
@@ -217,7 +285,7 @@
         smoothstep: t => t * t * (3 - 2 * t),
         bezierY: ([, y1, , y2]) => t => {
             const u = 1 - t;
-            return u * u * u * 0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * 1
+            return u * u * u * 0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * 1;
         }
     };
 
@@ -390,8 +458,7 @@
         }
 
         isInFront(pos) {
-            const z = pos?.z || 0;
-            return z > 0
+            return (pos?.z || 0) > 0
         }
 
         update() {
@@ -568,15 +635,15 @@
             const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
             const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
             applyLighting(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96, {
-                offsetX: offX * .5,
-                offsetY: offY * .5,
+                offsetX: offX * 0.5,
+                offsetY: offY * 0.5,
                 innerColor: behind ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.12)",
                 outerColor: "rgba(80,80,80,0.08)"
             });
             applySpecularHighlight(this.game.ctx, this.screen.x, this.screen.y, this.screen.r / 0.96, {
-                offsetX: offX * .4,
-                offsetY: offY * .4,
-                sizeFactor: .7,
+                offsetX: offX * 0.4,
+                offsetY: offY * 0.4,
+                sizeFactor: 0.7,
                 color: behind ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.1)"
             })
         }
@@ -686,28 +753,25 @@
     }
 
     class StarFields {
-        constructor(game, layerName) {
+        constructor(game, cfg, idx) {
             this.game = game;
-            this.layerName = layerName;
-            this.cfg = CONFIG.starFields?.[layerName] || {
+            this.cfg = cfg || {
                 shape: "circle",
                 zRange: [3000, 20000],
                 keyframes: [{second: 0, count: 200, size: 1, speed: 1000, focalAngleDeg: 0, focalRadius: 0}]
             };
             const maxCount = Math.max(1, ...((this.cfg.keyframes || []).map(k => Math.max(0, Math.round(k.count ?? 0)))));
             this.POOL_SIZE = Math.max(1024, maxCount * 4);
-            this.baseSeed = this.hashStr(`${layerName}-stars`);
+            this.baseSeed = this.hashStr(`${cfg?.name || "layer"}-${idx}`);
             this.seed = this.baseSeed;
             this.stars = [];
             this.lastT = 0;
             this._p = null;
             this._vp = {x: 0, y: 0};
-
             const [zMin, zMax] = this.cfg.zRange || [3000, 20000];
             this.zMin = zMin;
             this.zMax = zMax;
             this.depth = Math.max(1, zMax - zMin);
-
             this.buildPool();
             this.buildSpeedLUT();
         }
@@ -716,21 +780,21 @@
             let h = 2166136261 >>> 0;
             for (let i = 0; i < s.length; i++) {
                 h ^= s.charCodeAt(i);
-                h = Math.imul(h, 16777619);
+                h = Math.imul(h, 16777619)
             }
-            return h >>> 0;
+            return h >>> 0
         }
 
         rand() {
             this.seed = (1664525 * this.seed + 1013904223) >>> 0;
-            return (this.seed >>> 0) / 4294967296;
+            return (this.seed >>> 0) / 4294967296
         }
 
         randNorm() {
             let u = 0, v = 0;
             while (u === 0) u = this.rand();
             while (v === 0) v = this.rand();
-            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
         }
 
         paramsAt(t) {
@@ -743,14 +807,14 @@
             const twinkle = Math.max(0, kfResolveNumeric(t, kf, "twinkle", 0.2));
             const trail = Math.max(0, kfResolveNumeric(t, kf, "trail", 0.1));
             const spread = Math.max(0.1, kfResolveNumeric(t, kf, "spawnSpread", 1.0));
-            return {count, size, speed, focalAngleDeg, focalRadius, twinkle, trail, spread};
+            return {count, size, speed, focalAngleDeg, focalRadius, twinkle, trail, spread}
         }
 
         vpAt(t) {
             const p = this.paramsAt(t);
             const angle = p.focalAngleDeg * (Math.PI / 180);
             const vpLen = p.focalRadius * 0.9 * this.game.camera.minDim;
-            return {vp: {x: Math.cos(angle) * vpLen, y: Math.sin(angle) * vpLen}, p};
+            return {vp: {x: Math.cos(angle) * vpLen, y: Math.sin(angle) * vpLen}, p}
         }
 
         buildPool() {
@@ -760,15 +824,15 @@
                 const z0 = this.zMin + this.rand() * this.depth;
                 const x = this.randNorm();
                 const y = this.randNorm();
-                const alpha = 0.65 + 0.35 * this.rand();
+                const alpha = .65 + .35 * this.rand();
                 const tPhase = this.rand() * Math.PI * 2;
-                this.stars.push({x, y, z0, alpha, tPhase});
+                this.stars.push({x, y, z0, alpha, tPhase})
             }
         }
 
         speedAt(t) {
             const kf = this.cfg.keyframes || [];
-            return Math.max(0.1, kfResolveNumeric(t, kf, "speed", 1000));
+            return Math.max(0.1, kfResolveNumeric(t, kf, "speed", 1000))
         }
 
         buildSpeedLUT() {
@@ -782,9 +846,9 @@
                 const t1 = t0 + this.LUT_DT;
                 const v0 = this.speedAt(t0);
                 const v1 = this.speedAt(t1);
-                const area = 0.5 * (v0 + v1) * this.LUT_DT;
+                const area = .5 * (v0 + v1) * this.LUT_DT;
                 acc += area;
-                this.cum[i] = acc;
+                this.cum[i] = acc
             }
         }
 
@@ -799,19 +863,28 @@
             const v0 = c1 - c0;
             const v1 = c2 - c1;
             const inst = v0 + (v1 - v0) * frac;
-            return c1 + inst * frac;
+            return c1 + inst * frac
+        }
+
+        isOnScreen(x, y, W, H, m = 60) {
+            return !(x < -m || x > W + m || y < -m || y > H + m)
         }
 
         starZAtTime(s, t) {
-            const travel = this.travelAt(t) % this.depth;
-            const z = this.zMin + (s.z0 - travel);
-            const wrapped = this.zMin + ((z - this.zMin) % this.depth + this.depth) % this.depth;
-            return Math.max(this.zMin + 0.001, Math.min(this.zMax, wrapped));
+            const d = this.depth;
+            let z = this.zMin + (((s.z0 - (this.travelAt(t) % d)) % d) + d) % d;
+            if (z < this.zMin + 0.001) {
+                const {vp, p} = this.vpAt(t);
+                const pr = this.project(s.x, s.y, z, vp, this.game.camera, p.spread, 0.05);
+                const W = this.game.canvas.width, H = this.game.canvas.height;
+                if (this.isOnScreen(pr.x, pr.y, W, H)) z += d
+            }
+            return Math.max(this.zMin + 0.001, Math.min(this.zMax, z))
         }
 
-        project(x, y, z, vp, cam, spread = 1, zClamp = 1) {
+        project(x, y, z, vp, cam, spread = 1, zClamp = 0.05) {
             const k = (cam.minDim * cam.focal) / Math.max(z, zClamp);
-            return {x: cam.cx + vp.x + (x * spread) * k, y: cam.cy + (y * spread) * k + vp.y, k};
+            return {x: cam.cx + vp.x + (x * spread) * k, y: cam.cy + (y * spread) * k + vp.y, k}
         }
 
         update() {
@@ -819,11 +892,11 @@
             this.lastT = t;
             const {vp, p} = this.vpAt(t);
             this._vp = vp;
-            this._p = p;
+            this._p = p
         }
 
         syncToElapsed() {
-            this.update();
+            this.update()
         }
 
         draw(ctx) {
@@ -831,57 +904,45 @@
             const cam = this.game.camera;
             const pNow = this._p;
             const W = this.game.canvas.width, H = this.game.canvas.height;
-
             const c = Math.max(0, pNow.count || 0);
             const nFull = Math.floor(c);
             const frac = c - nFull;
             const N = Math.min(this.POOL_SIZE, nFull + (frac > 0 ? 1 : 0));
-
             const tNow = this.game.elapsed || 0;
             const trailDt = pNow.trail > 0 ? pNow.trail * 0.02 : 0;
             const tPast = Math.max(0, tNow - trailDt);
             const {vp: vpPast, p: pPast} = this.vpAt(tPast);
-
             const deltaTravel = ((this.travelAt(tNow) - this.travelAt(tPast)) % this.depth + this.depth) % this.depth;
             const crossedWrap = deltaTravel > this.depth * 0.5;
-
             ctx.save();
             ctx.lineCap = "round";
-
             for (let i = 0; i < N; i++) {
                 const s = this.stars[i];
-
                 let alphaMul = 1;
                 if (i === nFull && frac > 0) alphaMul = frac;
-
                 const zNow = this.starZAtTime(s, tNow);
-                const prNow = this.project(s.x, s.y, zNow, this._vp, cam, pNow.spread, 1);
-
+                const prNow = this.project(s.x, s.y, zNow, this._vp, cam, pNow.spread, 0.05);
                 const sizePx = pNow.size * (0.3 + 15 / Math.sqrt(zNow));
                 const trailPad = trailDt > 0 ? Math.max(sizePx, sizePx * 1.5) : 0;
                 const MARGIN = 40 + trailPad;
-
-                const prCull = this.project(s.x, s.y, zNow, this._vp, cam, pNow.spread, 1);
-                if (prCull.x < -MARGIN || prCull.x > W + MARGIN || prCull.y < -MARGIN || prCull.y > H + MARGIN) continue;
-
+                if (prNow.x < -MARGIN || prNow.x > W + MARGIN || prNow.y < -MARGIN || prNow.y > H + MARGIN) continue;
                 let a = s.alpha * alphaMul;
                 if (pNow.twinkle > 1e-6) {
                     const tw = 0.5 + 0.5 * Math.sin(tNow * 6 + s.tPhase);
-                    a = Math.max(0, Math.min(1, a * (1 - pNow.twinkle * 0.5 + pNow.twinkle * tw * 0.5)));
+                    a = Math.max(0, Math.min(1, a * (1 - pNow.twinkle * 0.5 + pNow.twinkle * tw * 0.5)))
                 }
                 ctx.globalAlpha = a;
-
                 if (trailDt > 0 && !crossedWrap) {
                     const zPast = Math.min(this.zMax - 0.001, zNow + deltaTravel);
-                    const prPast = this.project(s.x, s.y, zPast, vpPast, cam, pPast.spread, 1);
+                    const prPast = this.project(s.x, s.y, zPast, vpPast, cam, pPast.spread, 0.05);
                     ctx.beginPath();
                     ctx.moveTo(prPast.x, prPast.y);
                     ctx.lineTo(prNow.x, prNow.y);
-                    ctx.lineWidth = Math.max(1, sizePx * 0.8);
+                    const trailWidth = Math.max(0.25, Math.min(sizePx * 0.9, sizePx));
+                    ctx.lineWidth = trailWidth;
                     ctx.strokeStyle = "#ffffff";
                     ctx.stroke();
                 }
-
                 if (this.cfg.shape === "square") {
                     const half = sizePx / 2;
                     ctx.fillStyle = "#ffffff";
@@ -893,7 +954,6 @@
                     ctx.fill();
                 }
             }
-
             ctx.restore();
         }
     }
@@ -1033,23 +1093,19 @@
 
         updateFSButton() {
             if (!this.fsBtn) return;
-            if (document.fullscreenElement) this.fsBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 5H5v4h2V7h2V5zm10 0h-4v2h2v2h2V5zM5 15H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>';
-            else this.fsBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>'
+            if (document.fullscreenElement) this.fsBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 5H5v4h2V7h2V5zm10 0h-4v2h2v2h2V5zM5 15H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>'; else this.fsBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>'
         }
 
         updatePlayButton() {
             if (!this.btn) return;
-            if (this.game.play) this.btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/></svg>';
-            else this.btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"/></svg>'
+            if (this.game.play) this.btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/></svg>'; else this.btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"/></svg>'
         }
 
         renderVolumeIcon() {
             if (!this.volumeBtn) return;
             const muted = this.game.audio.muted || this.game.audio.volume === 0;
             const v = this.game.audio.volume;
-            if (muted) this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M19 8l-1.4-1.4L15.8 8.4 14.4 7l-1.4 1.4 1.8 1.8-1.8 1.8L14.4 13l1.4-1.4 1.8 1.8L19 12.9l-1.8-1.8L19 9.3z"/></svg>';
-            else if (v <= .4) this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M17 12c0-1.1-.9-2-2-2v4c1.1 0 2-.9 2-2z"/></svg>';
-            else this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/></svg>'
+            if (muted) this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M19 8l-1.4-1.4L15.8 8.4 14.4 7l-1.4 1.4 1.8 1.8-1.8 1.8L14.4 13l1.4-1.4 1.8 1.8L19 12.9l-1.8-1.8L19 9.3z"/></svg>'; else if (v <= .4) this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M17 12c0-1.1-.9-2-2-2v4c1.1 0 2-.9 2-2z"/></svg>'; else this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/></svg>'
         }
 
         setSliderValue(v) {
@@ -1100,14 +1156,13 @@
             this.ui = new UI(this);
             this.elapsed = 0;
             this.bodyIndex = {};
-            this.starsFar = new StarFields(this, "far");
-            this.starsNear = new StarFields(this, "near");
+            this.starLayers = (CONFIG.starFields || []).map((cfg, i) => new StarFields(this, cfg, i));
             autoExtendJourneySeconds();
             this.indexBodies();
             this.resizeCanvas();
             this.bindWindowEvents();
             this.ui.initControls();
-            this.animate()
+            this.animate();
         }
 
         indexBodies() {
@@ -1144,14 +1199,18 @@
             this.uranus.syncToElapsed?.();
             this.neptune.syncToElapsed?.();
             this.earth.syncToElapsed?.();
-            this.starsFar.syncToElapsed();
-            this.starsNear.syncToElapsed();
+            this.starLayers.forEach(l => l.syncToElapsed());
             this.camera.update()
         }
 
         resizeCanvas() {
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const w = Math.floor(window.innerWidth);
+            const h = Math.floor(window.innerHeight);
+            this.canvas.style.width = w + "px";
+            this.canvas.style.height = h + "px";
+            this.canvas.width = Math.round(w * dpr);
+            this.canvas.height = Math.round(h * dpr);
             this.camera.onResize()
         }
 
@@ -1171,14 +1230,13 @@
             this.neptune.update();
             this.earth.update();
             this.earth.moon.update();
-            this.starsFar.update();
-            this.starsNear.update();
+            this.starLayers.forEach(l => l.update());
             this.camera.update()
         }
 
         draw() {
             this.drawBackground(this.ctx);
-            this.starsFar.draw(this.ctx);
+            this.starLayers.filter(l => l.cfg.behindBodies !== false).forEach(l => l.draw(this.ctx));
             if (this.earth.visible && this.earth.screen.r > 0) this.earth.drawChildren(this.ctx);
             this.sun.draw(this.ctx);
             this.mercury.draw(this.ctx);
@@ -1187,8 +1245,8 @@
             this.jupiter.draw(this.ctx);
             this.saturn.draw(this.ctx);
             this.uranus.draw(this.ctx);
-            this.neptune.draw(this.ctx)
-            this.starsNear.draw(this.ctx);
+            this.neptune.draw(this.ctx);
+            this.starLayers.filter(l => l.cfg.behindBodies === false).forEach(l => l.draw(this.ctx))
         }
 
         animate() {
