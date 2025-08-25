@@ -2,561 +2,1101 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Viaje espacial a la Tierra</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Star Fields</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body {
-            margin: 0;
-            height: 100%;
-            background-color: #000; /* fondo oscuro para el espacio */
-            overflow: hidden;
-        }
-
-        /* El canvas ocupa toda la ventana y forzamos pixel art */
         #viaje {
-            display: block;
-            width: 100%;
-            height: 100%;
             image-rendering: crisp-edges;
-            image-rendering: pixelated;
+            image-rendering: pixelated
         }
     </style>
 </head>
-<body>
-<canvas id="viaje"></canvas>
-<div id="audio-controls" style="position:fixed; left:10px; top:60px; z-index:10; color:#fff; font:16px monospace;">
-    <button id="music-toggle">Play</button>
-    <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5">
+<body class="m-0 h-screen bg-black overflow-hidden">
+<canvas id="viaje" class="block w-full h-full"></canvas>
+<div class="fixed bottom-0 left-0 right-0 z-20 bg-black/70 backdrop-blur-sm border-t border-white/10 opacity-0 hover:opacity-100 transition">
+    <div class="flex items-center gap-3 px-3 py-2 text-white">
+        <button id="music-toggle"
+                class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5v14l11-7-11-7z"/>
+            </svg>
+        </button>
+        <div id="ui-timer" class="text-xs sm:text-sm font-mono tabular-nums select-none px-1">
+            <span id="uiTimeNow">00:00</span> / <span id="uiTimeTotal">00:00</span>
+        </div>
+        <div class="flex-1 px-2">
+            <input id="timeSlider" type="range" min="0" max="100" step="0.01" value="0"
+                   class="w-full accent-blue-500 h-2 rounded-lg cursor-pointer"/>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="grid place-items-center w-9 h-9 rounded-full bg-white/10">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M5 9v6h4l5 5V4L9 9H5z"/>
+                    <path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/>
+                </svg>
+            </div>
+            <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.5"
+                   class="w-28 md:w-36 accent-blue-500 h-2 rounded-lg cursor-pointer"/>
+        </div>
+        <button id="fs-toggle"
+                class="grid place-items-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/>
+            </svg>
+        </button>
+    </div>
 </div>
 <script>
     const CONFIG = {
-        journeyMinutes: 2,
-        stopStarsMinute: 1.5,
-        starSpeed: 20,
+        journeySeconds: 285,
+        camera: {focal: 600},
+        starFields: [
+            {
+                name: "bg",
+                shape: "circle",
+                zRange: [4000, 22000],
+                behindBodies: true,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 500,
+                        size: .8,
+                        speed: 8,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: .1,
+                        trail: 0,
+                        spawnSpread: Math.PI / 1.5,
+                        ease: "linear"
+                    },
+                    {second: 120, speed: 6, ease: "linear"},
+                    {second: 126.8, speed: 2, ease: "linear"}
+                ]
+            },
+            {
+                name: "far",
+                shape: "circle",
+                zRange: [4000, 22000],
+                behindBodies: true,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 400,
+                        size: 1.5,
+                        speed: 200,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: .01,
+                        trail: 0,
+                        spawnSpread: Math.PI / .3,
+                        ease: "linear"
+                    },
+                    {second: 120, speed: 100, ease: "linear"},
+                    {second: 126.8, speed: 4, ease: "linear"}
+                ]
+            },
+            {
+                name: "middle",
+                shape: "square",
+                zRange: [20, 22000],
+                behindBodies: false,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 300,
+                        size: 2,
+                        speed: 2000,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: .8,
+                        spawnSpread: Math.PI / .2,
+                        ease: "linear"
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            },
+            {
+                name: "near",
+                shape: "square",
+                zRange: [20, 22000],
+                behindBodies: false,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 160,
+                        size: 2,
+                        speed: 4000,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: 1.5,
+                        spawnSpread: Math.PI / .5,
+                        ease: "linear"
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            },
+            {
+                name: "nearest",
+                shape: "square",
+                zRange: [20, 22000],
+                behindBodies: false,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 80,
+                        size: 2.2,
+                        speed: 8000,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: 3,
+                        spawnSpread: Math.PI,
+                        ease: "linear"
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            },
+            {
+                name: "closer",
+                shape: "square",
+                zRange: [20, 22000],
+                behindBodies: false,
+                keyframes: [
+                    {
+                        second: 0,
+                        count: 40,
+                        size: 2.4,
+                        speed: 8000,
+                        focalAngleDeg: 0,
+                        focalRadius: 0,
+                        twinkle: 0,
+                        trail: 3,
+                        spawnSpread: Math.PI / 5,
+                        ease: "linear"
+                    },
+                    {second: 100, count: 0, trail: 0, speed: 400, ease: "linear"}
+                ]
+            }
+        ],
+        uranus: {
+            radius: 0.0008 / 2, color: "#7FFFD4",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 80, pos: {x: 0, y: 0, z: 1000}},
+                {second: 128, pos: {x: -0.4, y: 0, z: 4}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/uranus.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+            ]
+        },
         sun: {
-            appearMinute: 0,
-            growStartMinute: 0,
-            growEndMinute: 3.0,
-            initialSize: 1 / 500,
-            finalSize: 1 / 100,
-            positions: [
-                {minute: 0.0, pos: {x: 0.5, y: 0.5}},
-                {minute: 0.5, pos: {x: 0, y: 0}},
-                // {minute: 1.8, pos: {x: 0.5, y: 0.5}},
-                // {minute: 3, pos: {x: 0, y: 0.5}}
+            radius: .001,
+            color: "#f07d09",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 1e5}},
+                {second: 70, pos: {z: 2000}, ease: "linear"},
+                {second: 104, pos: {z: 300}, ease: "linear"},
+                {second: 110},
+                {second: 127.6, pos: {x: -.035, y: 0, z: 0}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/sun.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+                {
+                    type: "specular",
+                    offsetX: 0,
+                    offsetY: 0,
+                    sizeFactor: 4,
+                    color: "rgba(255,240,200,0.04)",
+                    radiusScale: 4
+                },
+                {
+                    type: "atmosphere",
+                    innerColor: "rgba(255,220,120,0.012)",
+                    outerColor: "rgba(255,200,50,0)",
+                    radiusScale: 10,
+                    composite: "lighter"
+                },
+                {
+                    type: "atmosphere",
+                    innerColor: "rgba(255,220,120,0.018)",
+                    outerColor: "rgba(255,200,50,0)",
+                    radiusScale: 12,
+                    composite: "lighter"
+                }
+            ]
+        },
+        mercury: {
+            radius: 0.0008 / 4, color: "#b4bdc7",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 122.7, pos: {x: 0.005, y: -0.001, z: 0}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/mercury.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+            ]
+        },
+        venus: {
+            radius: 0.0008 / 2, color: "#ba6e2e",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 80, pos: {x: 0, y: 0, z: 1000}},
+                {second: 116.28, pos: {x: -0.12, y: 0, z: 0}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/venus.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
             ]
         },
         earth: {
-            appearMinute: 0.0,
-            growStartMinute: 0.0,
-            growEndMinute: 0.5,
-            initialSize: 1 / 100,
-            finalSize: 1 / 3,
-            positions: [
-                {minute: 0, pos: {x: 0.5, y: 0.5}},
-                {minute: 0.5, pos: {x: 0.8, y: 0.8}},
+            radius: .0008 / 109,
+            color: "#3687ee",
+            keyframes: [
+                {second: 0, pos: {z: 1000}, ease: "smoothstep"},
+                {second: 120, pos: {z: 6}, ease: "smoothstep"},
+                {second: 126, pos: {z: 3}, ease: "smoothstep"},
+                {second: 138, pos: {z: .15}, ease: "smoothstep"},
+                {second: 256, pos: {z: .018}, ease: "smoothstep"},
+                {second: 380, pos: {z: .0095}, ease: "smoothstep"}
+            ],
+            textures: [
+                {type: "image", asset: "cloudInverted", alpha: .8, scrollSpeed: .0016, invert: true, clipScale: 1.02},
+                {type: "image", asset: "earth", alpha: 1, scrollSpeed: .0007, clipScale: 1},
+                {type: "image", asset: "cloud", alpha: .5, scrollSpeed: .0016, invert: false, clipScale: 1.02},
+                {
+                    type: "lighting",
+                    offsetX: -.2,
+                    offsetY: .2,
+                    innerColor: "rgba(255,255,255,0.1)",
+                    outerColor: "rgba(80,80,80,0.08)",
+                    radiusScale: 1 / 0.96,
+                    rotateWithTilt: true
+                },
+                {
+                    type: "specular",
+                    offsetX: -.2,
+                    offsetY: .2,
+                    sizeFactor: .8,
+                    color: "rgba(255,255,255,0.2)",
+                    radiusScale: 1 / 0.97,
+                    rotateWithTilt: true
+                },
+                {
+                    type: "atmosphere",
+                    innerColor: "rgba(255,255,255,0.04)",
+                    outerColor: "rgba(148,210,255,0)",
+                    radiusScale: 1 / 0.97
+                },
+                {
+                    type: "atmosphere",
+                    innerColor: "rgba(148,210,255,0.015)",
+                    outerColor: "rgba(148,210,255,0)",
+                    radiusScale: 1 / 0.6
+                },
+                {
+                    type: "atmosphere",
+                    innerColor: "rgba(148,210,255,0.015)",
+                    outerColor: "rgba(148,210,255,0)",
+                    radiusScale: 1 / 0.4
+                },
+                {
+                    type: "atmosphere",
+                    innerColor: "rgba(148,210,255,0.015)",
+                    outerColor: "rgba(148,210,255,0)",
+                    radiusScale: 1 / 0.3
+                }
             ]
         },
-        // Parámetros de sprites y animaciones
-        totalEarthFrames: 8000,
-        framesPerEarthUpdate: 1,
-        totalMoonFrames: 6000,
-        framesPerMoonUpdate: 1,
-        totalCloudFrames: 6500,
-        framesPerCloudsUpdate: 1,
-        // Número de estrellas
-        numStars: 500,
-        // Inclinación de la Tierra
+        moon: {
+            color: "#bbbbbb",
+            radiusFactor: .15,
+            orbit: {
+                parent: "earth",
+                distanceFactor: 11,
+                inclinationDeg: 6,
+                verticalFlatten: .02,
+                angularVelocity: .045,
+                initialAngle: -1.75
+            },
+            textures: [
+                {type: "image", asset: "moon", alpha: 1, scrollSpeed: .01, clipScale: 1},
+                {
+                    type: "lighting",
+                    offsetX: -.2,
+                    offsetY: .2,
+                    innerColor: "rgba(255,255,255,0.12)",
+                    outerColor: "rgba(80,80,80,0.08)",
+                    radiusScale: 1 / 0.96,
+                    rotateWithTilt: true
+                },
+                {
+                    type: "specular",
+                    offsetX: -.2,
+                    offsetY: .2,
+                    sizeFactor: .7,
+                    color: "rgba(255,255,255,0.1)",
+                    radiusScale: 1 / 0.96,
+                    rotateWithTilt: true
+                }
+            ]
+        },
+        mars: {
+            radius: 0.0008 / 2.5, color: "#b75741",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 96, pos: {x: 0, y: 0, z: 1000}},
+                {second: 108, pos: {x: 0.005, y: -0.002, z: 0}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/mars.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+            ]
+        },
+        jupiter: {
+            radius: 0.0008, color: "#f3e8a3",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 70, pos: {x: 0, y: 0, z: 1000}},
+                {second: 105.6, pos: {x: -0.2, y: 0, z: 4}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/jupiter.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+            ]
+        },
+        saturn: {
+            radius: 0.0008 / 2, color: "#C8B38B",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {z: 1000}},
+                {second: 102, pos: {x: 0.005, z: 0}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/saturn.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+            ]
+        },
+        neptune: {
+            radius: 0.0008 / 2, color: "#bfc4ff",
+            keyframes: [
+                {second: 0, pos: {x: 0, y: 0, z: 20000}},
+                {second: 100, pos: {x: 0, y: 0, z: 1000}},
+                {second: 116, pos: {x: 0.2, y: 0.006, z: 0}}
+            ],
+            textures: [
+                {type: "image", url: "./assets/img/neptune.png", alpha: 1, scrollSpeed: .0005, clipScale: 1},
+            ]
+        },
         earthTiltDeg: 4,
-        // Ángulo inicial de la órbita de la Luna
-        moonAngle: -100,
-        // Devuelve la duración total del viaje en milisegundos
         get journeyDuration() {
-            return this.journeyMinutes * 60 * 1000;
-        },
-        // Calcula el instante en milisegundos en el que aparece la Tierra
-        get earthAppearTime() {
-            return this.earth.appearMinute * 60 * 1000;
-        },
-        // Tiempo en milisegundos a partir del cual dejan de generarse estrellas
-        get stopSpawnTime() {
-            return (this.stopStarsMinute != null)
-                ? this.stopStarsMinute * 60 * 1000
-                : this.earthAppearTime - 10000;
-        },
+            return this.journeySeconds ?? 0
+        }
+    };
+    const Easings = {
+        linear: t => t,
+        quadIn: t => t * t,
+        quadOut: t => 1 - (1 - t) * (1 - t),
+        quadInOut: t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
+        cubicInOut: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+        expoOut: t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t),
+        smoothstep: t => t * t * (3 - 2 * t),
+        bezierY: ([, y1, , y2]) => t => {
+            const u = 1 - t;
+            return u * u * u * 0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * 1
+        }
     };
 
-    /**
-     * Iluminación difusa simple (sombra tipo Phong básico)
-     */
+    function getEaseFn(k1, k2) {
+        const e = k1?.ease ?? k2?.ease ?? "linear";
+        if (typeof e === "string" && Easings[e]) return Easings[e];
+        if (Array.isArray(e) && e.length === 4) return Easings.bezierY(e);
+        return Easings.linear
+    }
+
+    function autoExtendJourneySeconds() {
+        const maxS = maxSecondInConfig(CONFIG);
+        if (typeof CONFIG.journeySeconds !== "number" || CONFIG.journeySeconds < maxS) CONFIG.journeySeconds = maxS
+    }
+
+    function maxSecondInConfig(obj) {
+        let m = 0;
+
+        function scan(o) {
+            if (!o || typeof o !== "object") return;
+            if (Array.isArray(o)) {
+                for (const it of o) scan(it);
+                return;
+            }
+            if (Array.isArray(o.keyframes)) {
+                for (const kf of o.keyframes) {
+                    if (kf && typeof kf.second === "number") {
+                        m = Math.max(m, kf.second);
+                    }
+                }
+            }
+            for (const v of Object.values(o)) {
+                scan(v);
+            }
+        }
+
+        scan(obj);
+        return m;
+    }
+
+    function interpolateVec3(elapsed, keyframes, fallback = {x: 0, y: 0, z: 5}) {
+        const kf = (keyframes || []).filter(k => typeof k.second === "number").sort((a, b) => a.second - b.second);
+        if (!kf.length) return fallback;
+        const has = (k, c) => k && k.pos && Object.prototype.hasOwnProperty.call(k.pos, c) && typeof k.pos[c] === "number";
+
+        function compAt(t, c) {
+            let prev = null, next = null;
+            for (let i = 0; i < kf.length; i++) {
+                const k = kf[i];
+                if (k.second <= t && has(k, c)) prev = k;
+                if (k.second >= t && has(k, c)) {
+                    next = k;
+                    break
+                }
+            }
+            if (prev && next && prev !== next) {
+                const ease = getEaseFn(prev, next);
+                const span = Math.max(1e-6, next.second - prev.second);
+                const raw = (t - prev.second) / span;
+                const tt = ease(Math.max(0, Math.min(1, raw)));
+                return prev.pos[c] + (next.pos[c] - prev.pos[c]) * tt
+            }
+            if (prev && has(prev, c)) return prev.pos[c];
+            if (next && has(next, c)) return next.pos[c];
+            for (let i = kf.length - 1; i >= 0; i--) if (has(kf[i], c)) return kf[i].pos[c];
+            return fallback[c]
+        }
+
+        return {x: compAt(elapsed, "x"), y: compAt(elapsed, "y"), z: compAt(elapsed, "z")}
+    }
+
     function applyLighting(ctx, cx, cy, radius, options = {}) {
         const {
-            offsetX = 0.5,
-            offsetY = -0.5,
-            innerColor = 'rgba(255,255,255,0.9)',
-            outerColor = 'rgba(0,0,0,0.3)',
-            innerRadiusFactor = 0.1
+            offsetX = .5,
+            offsetY = -.5,
+            innerColor = "rgba(255,255,255,0.9)",
+            outerColor = "rgba(0,0,0,0.3)",
+            innerRadiusFactor = .1
         } = options;
-
         ctx.save();
-        ctx.globalCompositeOperation = 'multiply';
-
-        const lightX = cx + radius * offsetX;
-        const lightY = cy + radius * offsetY;
-
-        const shade = ctx.createRadialGradient(
-            lightX, lightY, radius * innerRadiusFactor,
-            cx, cy, radius
-        );
+        ctx.globalCompositeOperation = "multiply";
+        const lightX = cx + radius * offsetX, lightY = cy + radius * offsetY,
+            shade = ctx.createRadialGradient(lightX, lightY, radius * innerRadiusFactor, cx, cy, radius);
         shade.addColorStop(0, innerColor);
         shade.addColorStop(1, outerColor);
-
         ctx.fillStyle = shade;
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
+        ctx.restore()
     }
 
-    /**
-     * Brillo especular (punto brillante del sol sobre la superficie)
-     */
     function applySpecularHighlight(ctx, cx, cy, radius, options = {}) {
-        const {
-            offsetX = 0.5,
-            offsetY = -0.5,
-            sizeFactor = 0.3,
-            color = 'rgba(255,255,255,0.6)'
-        } = options;
-
-        const lightX = cx + radius * offsetX;
-        const lightY = cy + radius * offsetY;
-
+        const {offsetX = .5, offsetY = -.5, sizeFactor = .3, color = "rgba(255,255,255,0.6)"} = options;
+        const lightX = cx + radius * offsetX, lightY = cy + radius * offsetY;
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-
-        const spec = ctx.createRadialGradient(
-            lightX, lightY, 0,
-            lightX, lightY, radius * sizeFactor
-        );
+        ctx.globalCompositeOperation = "lighter";
+        const spec = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, radius * sizeFactor);
         spec.addColorStop(0, color);
-        spec.addColorStop(1, 'rgba(255,255,255,0)');
-
+        spec.addColorStop(1, "rgba(255,255,255,0)");
         ctx.fillStyle = spec;
         ctx.beginPath();
         ctx.arc(lightX, lightY, radius * sizeFactor, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
+        ctx.restore()
     }
 
-    /**
-     * Atmósfera (halo alrededor del planeta)
-     */
     function applyAtmosphere(ctx, cx, cy, radius, options = {}) {
-        const {
-            color = 'rgba(0,150,255,0.2)',
-            innerAlpha = 0.0,
-            outerAlpha = 0.2
-        } = options;
-
+        const {innerColor, outerColor, radiusScale = 1, composite = "lighter", color, innerAlpha} = options;
+        const inCol = innerColor ?? (typeof innerAlpha === "number" ? `rgba(255,255,255,${innerAlpha})` : "rgba(255,255,255,0)");
+        const outCol = outerColor ?? (color ?? "rgba(255,255,255,0)");
+        const r = radius * radiusScale;
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-
-        const atm = ctx.createRadialGradient(
-            cx, cy, radius * 0.9,
-            cx, cy, radius
-        );
-        atm.addColorStop(0, `rgba(0,150,255,${innerAlpha})`);
-        atm.addColorStop(1, color);
-
-        ctx.fillStyle = atm;
+        ctx.globalCompositeOperation = composite;
+        const grad = ctx.createRadialGradient(cx, cy, r * 0.9, cx, cy, r);
+        grad.addColorStop(0, inCol);
+        grad.addColorStop(1, outCol);
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
+        ctx.restore()
+    }
+
+    function kfResolveNumeric(t, keyframes, key, def) {
+        const kf = (keyframes || []).filter(k => typeof k.second === "number").sort((a, b) => a.second - b.second);
+        if (!kf.length) return def;
+        let prev = null, next = null;
+        for (let i = 0; i < kf.length; i++) {
+            if (kf[i].second <= t) prev = kf[i];
+            if (kf[i].second >= t) {
+                next = kf[i];
+                break
+            }
+        }
+
+        function hasKey(k) {
+            return k && Object.prototype.hasOwnProperty.call(k, key) && typeof k[key] === "number"
+        }
+
+        if (hasKey(prev) && hasKey(next) && prev !== next) {
+            const ease = getEaseFn(prev, next);
+            const span = Math.max(1e-6, next.second - prev.second);
+            const raw = (t - prev.second) / span;
+            const tt = ease(Math.max(0, Math.min(1, raw)));
+            return prev[key] + (next[key] - prev[key]) * tt
+        }
+        if (hasKey(prev)) return prev[key];
+        for (let i = (next ? kf.indexOf(next) : kf.length - 1); i < kf.length; i++) {
+            if (hasKey(kf[i])) return kf[i][key]
+        }
+        for (let i = (prev ? kf.indexOf(prev) : 0); i >= 0; i--) {
+            if (hasKey(kf[i])) return kf[i][key]
+        }
+        return def
     }
 
     class AssetManager {
-        earthUrl = './assets/img/earth.png'
-        cloudUrl = './assets/img/cloud.png'
-        cloudInvertedUrl = './assets/img/cloud2.png'
-        moonUrl = './assets/img/moon.png'
-        songUrl = './assets/audio/song.m4a'
+        sunUrl = "./assets/img/sun.png";
+        earthUrl = "./assets/img/earth.png";
+        cloudUrl = "./assets/img/cloud.png";
+        cloudInvertedUrl = "./assets/img/cloud2.png";
+        moonUrl = "./assets/img/moon.png";
+        songUrl = "./assets/audio/song.m4a";
 
         constructor() {
+            this.sunSprite = new Image();
             this.earthSprite = new Image();
             this.cloudOverlay = new Image();
             this.cloudOverlayInverted = new Image();
             this.moonOverlay = new Image();
             this.song = new Audio();
-
-            this.loadAssets();
+            this.loadAssets()
         }
 
         loadAssets() {
+            this.sunSprite.src = this.sunUrl;
             this.earthSprite.src = this.earthUrl;
             this.cloudOverlay.src = this.cloudUrl;
             this.cloudOverlayInverted.src = this.cloudInvertedUrl;
             this.moonOverlay.src = this.moonUrl;
-
             this.song.src = this.songUrl;
             this.song.loop = true;
-            this.song.preload = 'auto';
-            this.song.volume = 0.5;
+            this.song.preload = "auto";
+            this.song.volume = .5
         }
 
         getEarthSprite() {
-            return this.earthSprite;
+            return this.earthSprite
         }
-/**/
+
         getCloudOverlay() {
-            return this.cloudOverlay;
+            return this.cloudOverlay
         }
 
         getCloudOverlayInverted() {
-            return this.cloudOverlayInverted;
+            return this.cloudOverlayInverted
         }
 
         getMoonOverlay() {
-            return this.moonOverlay;
+            return this.moonOverlay
         }
 
         getSong() {
-            return this.song;
+            return this.song
+        }
+
+        getImage(key) {
+            if (key === "sun") return this.sunSprite;
+            if (key === "earth") return this.earthSprite;
+            if (key === "cloud") return this.cloudOverlay;
+            if (key === "cloudInverted") return this.cloudOverlayInverted;
+            if (key === "moon") return this.moonOverlay;
+            return null
         }
     }
 
-    class Stars {
+    class Camera {
         constructor(game) {
             this.game = game;
-            this.stars = [];
-            this.backgroundStars = [];
-            this.createStars();
-            this.createBackgroundStars();
-        }
-
-        createStars() {
-            const numStars = 500;
-            this.stars = [];
-            for (let i = 0; i < numStars; i++) {
-                this.stars.push({
-                    x: (Math.random() * 2 - 1) * this.game.canvas.width * 0.35,
-                    y: (Math.random() * 2 - 1) * this.game.canvas.height * 0.35,
-                    z: Math.random() * this.game.canvas.width,
-                    speedFactor: 0.3 + Math.random() * 0.7
-                });
-            }
-        }
-
-        createBackgroundStars() {
-            const total = 200;
-            this.backgroundStars = [];
-            for (let i = 0; i < total; i++) {
-                this.backgroundStars.push({
-                    x: Math.random() * this.game.canvas.width,
-                    y: Math.random() * this.game.canvas.height,
-                    size: Math.random() * 1.5 + 0.3,
-                    brightness: Math.random() * 0.6 + 0.4
-                });
-            }
-        }
-
-        drawBackgroundStars(ctx) {
-            this.backgroundStars.forEach(s => {
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                const v = Math.floor(255 * s.brightness);
-                ctx.fillStyle = `rgb(${v},${v},${v})`;
-                ctx.fill();
-            });
-        }
-
-        drawStars(ctx) {
-            const focal = this.game.canvas.width;
-            const maxD = this.game.canvas.width;
-
-            this.stars.forEach(star => {
-                const k = focal / star.z;
-                const px = star.x * k + this.game.canvas.width / 2;
-                const py = star.y * k + this.game.canvas.height / 2;
-                const sz = Math.max(1, (1 - star.z / maxD) * 3);
-                if (px >= 0 && px <= this.game.canvas.width && py >= 0 && py <= this.game.canvas.height) {
-                    this.drawStar(ctx, px, py, sz);
-                }
-            });
-        }
-
-        drawStar(ctx, px, py, size) {
-            ctx.beginPath();
-            ctx.arc(px, py, size, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFF';
-            ctx.fill();
+            this.focal = CONFIG.camera?.focal ?? 600;
+            this.cx = 0;
+            this.cy = 0;
+            this.minDim = 1;
+            this.origin = {x: 0, y: 0}
         }
 
         onResize() {
-            this.createBackgroundStars();
-            this.createStars();
+            const c = this.game.canvas;
+            this.cx = c.width / 2;
+            this.cy = c.height / 2;
+            this.minDim = Math.min(c.width, c.height);
+            this.focal = CONFIG.camera?.focal ?? 600
         }
 
-        draw(ctx, drawBackground = false) {
-            (drawBackground) ? this.drawBackgroundStars(ctx) : this.drawStars(ctx);
+        isInFront(pos) {
+            return (pos?.z || 0) > 0
         }
 
         update() {
-            const maxD = this.game.canvas.width;
+            this.origin.x = 0;
+            this.origin.y = 0
+        }
 
-            this.stars.forEach(star => {
-                // La velocidad de las estrellas depende de starSpeed, no de la nave
-                star.z -= this.game.shipSpeed * star.speedFactor;
-                if (star.z <= 0) {
-                    if (this.game.elapsed < this.game.config.stopSpawnTime) {
-                        star.x = (Math.random() * 2 - 1) * this.game.canvas.width * 0.35;
-                        star.y = (Math.random() * 2 - 1) * this.game.canvas.height * 0.35;
-                        star.z = maxD;
-                    } else {
-                        star.z = 0;
-                    }
-                }
-            });
+        project(pos) {
+            const relX = pos.x - this.origin.x, relY = pos.y - this.origin.y;
+            const z = Math.max(pos.z, .001);
+            const k = (this.minDim * this.focal) / z;
+            return {x: this.cx + relX * k, y: this.cy + relY * k, k}
         }
     }
 
-    class Sun {
-        constructor(game) {
+    class BodyTextures {
+        constructor(game, body) {
             this.game = game;
-            this.x = 0;
-            this.y = 0;
-            this.size = 0;
-            this.visible = false;
+            this.body = body
         }
 
-        onResize() {
-            // Las posiciones y tamaños se recalculan en update() cada frame
+        layers() {
+            const cfg = CONFIG[this.body.name] || {};
+            if (Array.isArray(cfg.textures) && cfg.textures.length) return cfg.textures;
+            const arr = [];
+            if (this.body.name === "sun") {
+                arr.push({type: "image", asset: "sun", alpha: 1, scrollSpeed: .0005, clipScale: 1})
+            } else if (this.body.name === "earth") {
+                const sc = cfg.scrollSpeed ?? 0;
+                arr.push({type: "image", asset: "earth", alpha: 1, scrollSpeed: sc, clipScale: 1})
+            } else if (this.body.name === "moon") {
+                arr.push({type: "image", asset: "moon", alpha: 1, scrollSpeed: cfg.scrollSpeed ?? .01, clipScale: 1})
+            }
+            return arr
+        }
+
+        hasLayers() {
+            return this.layers().length > 0
+        }
+
+        getImage(layer) {
+            if (layer && layer.url) {
+                if (!layer._img) {
+                    const img = new Image();
+                    img.src = layer.url;
+                    layer._img = img;
+                }
+                return layer._img;
+            }
+            if (layer && layer.asset) {
+                return this.game.assetManager.getImage?.(layer.asset) || null;
+            }
+            return null
+        }
+
+        draw(ctx) {
+            const b = this.body;
+            if (!b.visible || b.screen.r <= 0) return;
+            const tiltDeg = (CONFIG[b.name]?.tiltDeg ?? (b.name === "earth" ? (CONFIG.earthTiltDeg || 0) : 0));
+            const baseTilt = tiltDeg * (Math.PI / 180);
+            for (const layer of this.layers()) {
+                const type = layer.type || "image";
+                if (type === "image") {
+                    const img = this.getImage(layer);
+                    if (!img || !img.complete) continue;
+                    const alpha = typeof layer.alpha === "number" ? layer.alpha : 1;
+                    const clipScale = typeof layer.clipScale === "number" ? layer.clipScale : 1;
+                    const rotation = typeof layer.rotationDeg === "number" ? layer.rotationDeg * (Math.PI / 180) : baseTilt;
+                    const spd = typeof layer.scrollSpeed === "number" ? layer.scrollSpeed : 0;
+                    const invert = !!layer.invert;
+                    const comp = layer.composite || "source-over";
+                    const smooth = layer.imageSmoothing;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(b.screen.x, b.screen.y, b.screen.r * clipScale, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.globalAlpha = alpha;
+                    ctx.globalCompositeOperation = comp;
+                    ctx.translate(b.screen.x, b.screen.y);
+                    ctx.rotate(rotation);
+                    ctx.imageSmoothingEnabled = smooth === undefined ? false : !!smooth;
+                    if (typeof smooth === "string") ctx.imageSmoothingQuality = smooth;
+                    const diameter = b.screen.r * 2 * clipScale;
+                    const scale = diameter / img.naturalHeight;
+                    const overlayW = img.naturalWidth * scale;
+                    const overlayH = diameter;
+                    const xOrigin = -overlayW / 2;
+                    const yOrigin = -overlayH / 2;
+                    const cycles = ((this.game.elapsed || 0) * spd) % 1;
+                    const rawOffset = (invert ? -cycles : cycles) * overlayW;
+                    const offsetPx = ((rawOffset % overlayW) + overlayW) % overlayW;
+                    const x1 = xOrigin + offsetPx;
+                    const x2 = x1 - overlayW;
+                    ctx.drawImage(img, x1, yOrigin, overlayW, overlayH);
+                    ctx.drawImage(img, x2, yOrigin, overlayW, overlayH);
+                    ctx.restore();
+                    continue
+                }
+                const radius = b.screen.r * (layer.radiusScale ?? (1 / 0.96));
+                let ox = layer.offsetX ?? -.2, oy = layer.offsetY ?? .2;
+                if (layer.rotateWithTilt !== false) {
+                    const cos = Math.cos(baseTilt), sin = Math.sin(baseTilt);
+                    const rx = ox * cos - oy * sin, ry = ox * sin + oy * cos;
+                    ox = rx;
+                    oy = ry
+                }
+                if (type === "lighting") {
+                    applyLighting(ctx, b.screen.x, b.screen.y, radius, {
+                        offsetX: ox,
+                        offsetY: oy,
+                        innerColor: layer.innerColor ?? "rgba(255,255,255,0.1)",
+                        outerColor: layer.outerColor ?? "rgba(80,80,80,0.08)",
+                        innerRadiusFactor: layer.innerRadiusFactor ?? .1
+                    });
+                    continue
+                }
+                if (type === "specular") {
+                    applySpecularHighlight(ctx, b.screen.x, b.screen.y, radius, {
+                        offsetX: ox,
+                        offsetY: oy,
+                        sizeFactor: layer.sizeFactor ?? .8,
+                        color: layer.color ?? "rgba(255,255,255,0.2)"
+                    });
+                    continue
+                }
+                if (type === "atmosphere") {
+                    applyAtmosphere(ctx, b.screen.x, b.screen.y, radius, {
+                        innerColor: layer.innerColor,
+                        outerColor: layer.outerColor,
+                        radiusScale: layer.radiusScale ?? 1,
+                        composite: layer.composite || "lighter",
+                        color: layer.color,
+                        innerAlpha: layer.innerAlpha
+                    });
+                    continue
+                }
+            }
+        }
+    }
+
+    class CelestialBody {
+        constructor(game, name) {
+            this.game = game;
+            this.name = name;
+            const cfg = CONFIG[name] || {};
+            this.visible = false;
+            this.worldPos = {x: 0, y: 0, z: 5};
+            this.color = cfg.color;
+            this.worldR = cfg.radius ?? .001;
+            this.screen = {x: 0, y: 0, r: 0};
+            this.keyframes = cfg.keyframes || null;
+            this.orbit = cfg.orbit || null;
+            this.radiusFactor = cfg.radiusFactor || null;
+            this.textures = new BodyTextures(game, this)
+        }
+
+        computeOrbitPosition() {
+            if (!this.orbit || !this.orbit.parent) return null;
+            const parent = this.game.bodyIndex[this.orbit.parent];
+            if (!parent) return null;
+            const t = this.game.elapsed || 0;
+            const a = (this.orbit.initialAngle ?? 0) + (this.orbit.angularVelocity ?? 0) * t;
+            const dist = (this.orbit.distance ?? 0) || parent.worldR * (this.orbit.distanceFactor ?? 5);
+            const inc = (this.orbit.inclinationDeg ?? 0) * Math.PI / 180;
+            const vflat = this.orbit.verticalFlatten ?? 1;
+            const x = parent.worldPos.x + Math.sin(a) * dist;
+            const yOrb = Math.cos(a) * dist;
+            const y = parent.worldPos.y + yOrb * Math.cos(inc) * vflat;
+            const z = parent.worldPos.z;
+            return {x, y, z}
+        }
+
+        update() {
+            const cfg = CONFIG[this.name] || {};
+            if (this.keyframes && this.keyframes.length) {
+                this.worldPos = interpolateVec3(this.game.elapsed || 0, this.keyframes, {x: 0, y: 0, z: 5})
+            } else if (this.orbit && this.orbit.parent) {
+                const p = this.computeOrbitPosition();
+                if (p) this.worldPos = p
+            }
+            if (this.radiusFactor && this.orbit?.parent) {
+                const parent = this.game.bodyIndex[this.orbit.parent];
+                if (parent) this.worldR = Math.max(0, parent.worldR * this.radiusFactor)
+            } else {
+                this.worldR = cfg.radius ?? this.worldR
+            }
+            if (!this.game.camera.isInFront(this.worldPos)) {
+                this.visible = false;
+                return
+            }
+            const proj = this.game.camera.project(this.worldPos);
+            this.screen.x = proj.x;
+            this.screen.y = proj.y;
+            this.screen.r = Math.max(0, this.worldR * proj.k);
+            this.visible = this.screen.r > 0
         }
 
         draw(ctx) {
             if (!this.visible) return;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'yellow'; // Color sólido
-            ctx.fill();
-
+            if (this.color) {
+                ctx.beginPath();
+                ctx.arc(this.screen.x, this.screen.y, this.screen.r, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill()
+            }
+            if (this.textures && this.textures.hasLayers()) {
+                this.textures.draw(ctx)
+            }
         }
 
-        update() {
-            const elapsed = this.game.elapsed || 0;
-            const cfg = this.game.config.sun;
-            const canvasW = this.game.canvas.width;
-            const canvasH = this.game.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
-
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            // Visibilidad
-            if (elapsed < appearTime) {
-                this.visible = false;
-                return;
-            }
-            this.visible = true;
-
-            // Tamaño (radio) con interpolación
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
-            } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
-            }
-            this.size = minDim * sizeFactor;
-
-            // Posición relativa (interpolada)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                // Si el tiempo es anterior al primer punto, tomar el primero
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
-                } else {
-                    // Buscar segmento donde cae el tiempo
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
-                }
-            }
-            // Posición por defecto si no hay lista de posiciones
-            if (!relPos) {
-                const fallback = this.game.config.sunRelativePos || {x: 0.05, y: 0.5};
-                relPos = fallback;
-            }
-            this.x = relPos.x * canvasW;
-            this.y = relPos.y * canvasH;
+        syncToElapsed() {
+            this.update()
         }
     }
 
-    class Earth {
+    class Moon extends CelestialBody {
         constructor(game) {
-            this.game = game;
-            this.earthFrameIndex = 0;
-            this.frameCounter = 0;
+            super(game, "moon")
+        }
+
+        draw(ctx, behind = false) {
+            if (!this.visible || this.screen.r <= 0) return;
+            const angle = (this.orbit?.initialAngle ?? 0) + (this.orbit?.angularVelocity ?? 0) * (this.game.elapsed || 0);
+            const depth = Math.cos(angle);
+            const isBehind = depth < 0;
+            if (behind !== isBehind) return;
+            super.draw(ctx)
+        }
+    }
+
+    class Earth extends CelestialBody {
+        constructor(game) {
+            super(game, "earth");
+            this.moon = new Moon(game)
         }
 
         draw(ctx) {
-            const earthImg = this.game.assetManager.getEarthSprite();
-            if (earthImg.complete) {
-                ctx.save();
+            if (!this.visible || this.screen.r <= 0) return;
+            super.draw(ctx)
+        }
 
-                ctx.imageSmoothingEnabled = false;
-                ctx.imageSmoothingQuality = 'low';
+        drawChildren(ctx) {
+            if (!this.visible || this.screen.r <= 0) return;
+            this.moon.draw(ctx, true);
+            this.draw(ctx);
+            this.moon.draw(ctx, false)
+        }
 
-                // clip circular
-                ctx.beginPath();
-                ctx.arc(this.cx, this.cy, this.game.boxSize / 2, 0, Math.PI * 2);
-                ctx.clip();
+        syncToElapsed() {
+            this.update();
+            this.moon.update();
+            this.moon.syncToElapsed()
+        }
+    }
 
-                const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-                ctx.translate(this.cx, this.cy);
-                ctx.rotate(tilt);
+    class StarFields {
+        constructor(game, cfg, idx) {
+            this.game = game;
+            this.cfg = cfg || {
+                shape: "circle",
+                zRange: [3000, 20000],
+                keyframes: [{second: 0, count: 200, size: 1, speed: 1000, focalAngleDeg: 0, focalRadius: 0}]
+            };
+            const maxCount = Math.max(1, ...((this.cfg.keyframes || []).map(k => Math.max(0, Math.round(k.count ?? 0)))));
+            this.POOL_SIZE = Math.max(1024, maxCount * 4);
+            this.baseSeed = this.hashStr(`${cfg?.name || "layer"}-${idx}`);
+            this.seed = this.baseSeed;
+            this.stars = [];
+            this.lastT = 0;
+            this._p = null;
+            this._vp = {x: 0, y: 0};
+            const [zMin, zMax] = this.cfg.zRange || [3000, 20000];
+            this.zMin = zMin;
+            this.zMax = zMax;
+            this.depth = Math.max(1, zMax - zMin);
+            this.buildPool();
+            this.buildSpeedLUT()
+        }
 
-                // escala para altura = boxSize
-                const scale = this.game.boxSize / earthImg.naturalHeight;
-                const overlayW = earthImg.naturalWidth * scale;
-                const overlayH = this.game.boxSize;
+        hashStr(s) {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 16777619)
+            }
+            return h >>> 0
+        }
 
-                // origen centrado
-                const xOrigin = -overlayW / 2;
-                const yOrigin = -overlayH / 2;
+        rand() {
+            this.seed = (1664525 * this.seed + 1013904223) >>> 0;
+            return (this.seed >>> 0) / 4294967296
+        }
 
-                // offset animado hacia la derecha + wrap
-                let totalOffset = (this.earthFrameIndex / this.game.config.totalEarthFrames) * overlayW;
-                totalOffset = ((totalOffset % overlayW) + overlayW) % overlayW;
+        randNorm() {
+            let u = 0, v = 0;
+            while (u === 0) u = this.rand();
+            while (v === 0) v = this.rand();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
+        }
 
-                // dos repeticiones
-                const x1 = xOrigin + totalOffset;
-                const x2 = x1 - overlayW;
+        paramsAt(t) {
+            const kf = this.cfg.keyframes || [];
+            const count = Math.max(0, Math.round(kfResolveNumeric(t, kf, "count", 200)));
+            const size = Math.max(.1, kfResolveNumeric(t, kf, "size", 1));
+            const speed = Math.max(.1, kfResolveNumeric(t, kf, "speed", 1000));
+            const focalAngleDeg = kfResolveNumeric(t, kf, "focalAngleDeg", 0);
+            const focalRadius = Math.max(0, Math.min(.9, kfResolveNumeric(t, kf, "focalRadius", 0)));
+            const twinkle = Math.max(0, kfResolveNumeric(t, kf, "twinkle", .2));
+            const trail = Math.max(0, kfResolveNumeric(t, kf, "trail", .1));
+            const spread = Math.max(.1, kfResolveNumeric(t, kf, "spawnSpread", 1));
+            return {count, size, speed, focalAngleDeg, focalRadius, twinkle, trail, spread}
+        }
 
-                ctx.drawImage(earthImg, x1, yOrigin, overlayW, overlayH);
-                ctx.drawImage(earthImg, x2, yOrigin, overlayW, overlayH);
+        vpAt(t) {
+            const p = this.paramsAt(t);
+            const angle = p.focalAngleDeg * (Math.PI / 180);
+            const vpLen = p.focalRadius * .9 * this.game.camera.minDim;
+            return {vp: {x: Math.cos(angle) * vpLen, y: Math.sin(angle) * vpLen}, p}
+        }
 
-                ctx.restore();
-
-                const baseX = -0.2, baseY = 0.2;
-                const offX = baseX * Math.cos(tilt) - baseY * Math.sin(tilt);
-                const offY = baseX * Math.sin(tilt) + baseY * Math.cos(tilt);
-
-                applyLighting(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
-                    offsetX: offX,
-                    offsetY: offY,
-                    innerColor: 'rgba(255,255,255,0.1)',
-                    outerColor: 'rgba(80,80,80,0.08)'
-                });
-
-                applySpecularHighlight(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.98, {
-                    offsetX: offX,
-                    offsetY: offY,
-                    sizeFactor: 0.8,
-                    color: 'rgba(255,255,255,0.2)'
-                });
-
-                applyAtmosphere(this.game.ctx, this.cx, this.cy, this.game.boxSize / 1.95, {
-                    color: 'rgba(148,210,255,0.2)'
-                });
+        buildPool() {
+            this.seed = this.baseSeed;
+            this.stars.length = 0;
+            for (let i = 0; i < this.POOL_SIZE; i++) {
+                const z0 = this.zMin + this.rand() * this.depth;
+                const x = this.randNorm();
+                const y = this.randNorm();
+                const alpha = .65 + .35 * this.rand();
+                const tPhase = this.rand() * Math.PI * 2;
+                this.stars.push({x, y, z0, alpha, tPhase})
             }
         }
 
+        speedAt(t) {
+            const kf = this.cfg.keyframes || [];
+            return Math.max(.1, kfResolveNumeric(t, kf, "speed", 1000))
+        }
+
+        buildSpeedLUT() {
+            const dur = Math.max(.01, CONFIG.journeyDuration || 0);
+            this.LUT_DT = 1 / 120;
+            const steps = Math.ceil(dur / this.LUT_DT) + 2;
+            this.cum = new Float64Array(steps);
+            let acc = 0;
+            for (let i = 0; i < steps; i++) {
+                const t0 = i * this.LUT_DT;
+                const t1 = t0 + this.LUT_DT;
+                const v0 = this.speedAt(t0);
+                const v1 = this.speedAt(t1);
+                const area = .5 * (v0 + v1) * this.LUT_DT;
+                acc += area;
+                this.cum[i] = acc
+            }
+        }
+
+        travelAt(t) {
+            if (t <= 0) return 0;
+            const i = Math.min(this.cum.length - 2, Math.floor(t / this.LUT_DT));
+            const t0 = i * this.LUT_DT;
+            const frac = (t - t0) / this.LUT_DT;
+            const c0 = i > 0 ? this.cum[i - 1] : 0;
+            const c1 = this.cum[i];
+            const c2 = this.cum[i + 1];
+            const v0 = c1 - c0;
+            const v1 = c2 - c1;
+            const inst = v0 + (v1 - v0) * frac;
+            return c1 + inst * frac
+        }
+
+        isOnScreen(x, y, W, H, m = 60) {
+            return !(x < -m || x > W + m || y < -m || y > H + m)
+        }
+
+        starZAtTime(s, t) {
+            const d = this.depth;
+            let z = this.zMin + (((s.z0 - (this.travelAt(t) % d)) % d) + d) % d;
+            if (z < this.zMin + .001) {
+                const {vp, p} = this.vpAt(t);
+                const pr = this.project(s.x, s.y, z, vp, this.game.camera, p.spread, .05);
+                const W = this.game.canvas.width, H = this.game.canvas.height;
+                if (this.isOnScreen(pr.x, pr.y, W, H)) z += d
+            }
+            return Math.max(this.zMin + .001, Math.min(this.zMax, z))
+        }
+
+        project(x, y, z, vp, cam, spread = 1, zClamp = .05) {
+            const k = (cam.minDim * cam.focal) / Math.max(z, zClamp);
+            return {x: cam.cx + vp.x + (x * spread) * k, y: cam.cy + (y * spread) * k + vp.y, k}
+        }
+
         update() {
-            this.frameCounter++;
-            if (this.frameCounter >= this.game.config.framesPerEarthUpdate) {
-                this.frameCounter = 0;
-                this.earthFrameIndex = (this.earthFrameIndex + 1) % this.game.config.totalEarthFrames;
-            }
+            const t = this.game.elapsed || 0;
+            this.lastT = t;
+            const {vp, p} = this.vpAt(t);
+            this._vp = vp;
+            this._p = p
+        }
 
-            // Array Positions updates
-            const elapsed = this.game.elapsed || 0;
-            const cfg = this.game.config.earth;
-            const canvasW = this.game.canvas.width;
-            const canvasH = this.game.canvas.height;
-            const minDim = Math.min(canvasW, canvasH);
+        syncToElapsed() {
+            this.update()
+        }
 
-            const appearTime = (cfg.appearMinute || 0) * 60 * 1000;
-            const growStartTime = (cfg.growStartMinute || 0) * 60 * 1000;
-            const growEndTime = (cfg.growEndMinute || 0) * 60 * 1000;
-
-            if (elapsed < appearTime) {
-                this.game.earthVisible = false;
-                this.game.boxSize = 0;
-                return;
-            }
-            this.game.earthVisible = true;
-
-            // Tamaño de la Tierra (diámetro)
-            let sizeFactor;
-            if (elapsed <= growStartTime) {
-                sizeFactor = cfg.initialSize;
-            } else if (elapsed >= growEndTime) {
-                sizeFactor = cfg.finalSize;
-            } else {
-                const t = (elapsed - growStartTime) / (growEndTime - growStartTime);
-                const eased = Math.pow(t, 3);
-                sizeFactor = cfg.initialSize + (cfg.finalSize - cfg.initialSize) * eased;
-            }
-            this.game.boxSize = minDim * sizeFactor;
-
-            // Posición relativa (centro de la Tierra)
-            let relPos;
-            const positions = cfg.positions || [];
-            if (positions.length > 0) {
-                const firstT = positions[0].minute * 60 * 1000;
-                const lastT = positions[positions.length - 1].minute * 60 * 1000;
-                if (elapsed <= firstT) {
-                    relPos = positions[0].pos;
-                } else if (elapsed >= lastT) {
-                    relPos = positions[positions.length - 1].pos;
+        draw(ctx) {
+            if (!this._p) return;
+            const cam = this.game.camera;
+            const pNow = this._p;
+            const W = this.game.canvas.width, H = this.game.canvas.height;
+            const c = Math.max(0, pNow.count || 0);
+            const nFull = Math.floor(c);
+            const frac = c - nFull;
+            const N = Math.min(this.POOL_SIZE, nFull + (frac > 0 ? 1 : 0));
+            const tNow = this.game.elapsed || 0;
+            const trailDt = pNow.trail > 0 ? pNow.trail * .02 : 0;
+            const tPast = Math.max(0, tNow - trailDt);
+            const {vp: vpPast, p: pPast} = this.vpAt(tPast);
+            const deltaTravel = ((this.travelAt(tNow) - this.travelAt(tPast)) % this.depth + this.depth) % this.depth;
+            const crossedWrap = deltaTravel > this.depth * .5;
+            ctx.save();
+            ctx.lineCap = "round";
+            for (let i = 0; i < N; i++) {
+                const s = this.stars[i];
+                let alphaMul = 1;
+                if (i === nFull && frac > 0) alphaMul = frac;
+                const zNow = this.starZAtTime(s, tNow);
+                const prNow = this.project(s.x, s.y, zNow, this._vp, cam, pNow.spread, .05);
+                const sizePx = pNow.size * (.3 + 15 / Math.sqrt(zNow));
+                const trailPad = trailDt > 0 ? Math.max(sizePx, sizePx * 1.5) : 0;
+                const MARGIN = 40 + trailPad;
+                if (prNow.x < -MARGIN || prNow.x > W + MARGIN || prNow.y < -MARGIN || prNow.y > H + MARGIN) continue;
+                let a = s.alpha * alphaMul;
+                if (pNow.twinkle > 1e-6) {
+                    const tw = .5 + .5 * Math.sin(tNow * 6 + s.tPhase);
+                    a = Math.max(0, Math.min(1, a * (1 - pNow.twinkle * .5 + pNow.twinkle * tw * .5)))
+                }
+                ctx.globalAlpha = a;
+                if (trailDt > 0 && !crossedWrap) {
+                    const zPast = Math.min(this.zMax - .001, zNow + deltaTravel);
+                    const prPast = this.project(s.x, s.y, zPast, vpPast, cam, pPast.spread, .05);
+                    ctx.beginPath();
+                    ctx.moveTo(prPast.x, prPast.y);
+                    ctx.lineTo(prNow.x, prNow.y);
+                    const trailWidth = Math.max(.25, Math.min(sizePx * .9, sizePx));
+                    ctx.lineWidth = trailWidth;
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.stroke()
+                }
+                if (this.cfg.shape === "square") {
+                    const half = sizePx / 2;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(prNow.x - half, prNow.y - half, sizePx, sizePx)
                 } else {
-                    for (let i = 0; i < positions.length - 1; i++) {
-                        const t1 = positions[i].minute * 60 * 1000;
-                        const t2 = positions[i + 1].minute * 60 * 1000;
-                        if (elapsed >= t1 && elapsed <= t2) {
-                            const p1 = positions[i].pos;
-                            const p2 = positions[i + 1].pos;
-                            const ratio = (elapsed - t1) / (t2 - t1);
-                            relPos = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            };
-                            break;
-                        }
-                    }
+                    ctx.beginPath();
+                    ctx.arc(prNow.x, prNow.y, sizePx / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fill()
                 }
             }
-            if (!relPos) {
-                // Posición por defecto en el centro
-                relPos = {x: 0.5, y: 0.5};
-            }
-
-            this.cx = relPos.x * canvasW;
-            this.cy = relPos.y * canvasH;
-            this.game.dx = this.cx - this.game.boxSize / 2;
-            this.game.dy = this.cy - this.game.boxSize / 2;
+            ctx.restore()
         }
     }
 
@@ -565,328 +1105,305 @@
             this.game = game;
             this.audio = this.game.assetManager.getSong();
             this.isPlaying = false;
-            this.setVolume(0.5);
+            this._muted = false;
+            this._lastVolume = .5;
+            this.setVolume(.5)
         }
 
         play() {
             this.audio.play();
-            this.isPlaying = true;
+            this.isPlaying = true
         }
 
         pause() {
             this.audio.pause();
-            this.isPlaying = false;
+            this.isPlaying = false
         }
 
         toggle() {
-            this.isPlaying ? this.pause() : this.play();
+            this.isPlaying ? this.pause() : this.play()
         }
 
         setVolume(v) {
-            this.audio.volume = Math.max(0, Math.min(1, v));
+            const vol = Math.max(0, Math.min(1, v));
+            this.audio.volume = vol;
+            if (vol > 0) this._lastVolume = vol;
+            this._muted = vol === 0
+        }
+
+        setMuted(m) {
+            this._muted = !!m;
+            if (this._muted) this.audio.volume = 0; else this.audio.volume = this._lastVolume > 0 ? this._lastVolume : .25
+        }
+
+        toggleMute() {
+            this.setMuted(!this._muted)
+        }
+
+        get muted() {
+            return this._muted
+        }
+
+        get volume() {
+            return this.audio.volume || 0
+        }
+
+        seekTo(seconds) {
+            const a = this.audio;
+            const target = Math.max(0, Number(seconds) || 0);
+            if (!isNaN(a.duration) && isFinite(a.duration)) a.currentTime = Math.max(0, Math.min(a.duration, target)); else a.currentTime = target
+        }
+
+        getDuration() {
+            const d = this.audio.duration;
+            return isFinite(d) ? d : 0
+        }
+
+        getCurrentTime() {
+            return typeof this.audio.currentTime === "number" ? this.audio.currentTime : 0
+        }
+
+        addEventListener(type, handler) {
+            this.audio.addEventListener(type, handler)
         }
     }
 
     class UI {
         constructor(game) {
+            this.game = game;
             this.canvas = game.canvas;
-            this.game = game;
+            this.btn = document.getElementById("music-toggle");
+            this.volume = document.getElementById("music-volume");
+            this.timeSlider = document.getElementById("timeSlider");
+            this.volumeBtn = this.volume ? this.volume.previousElementSibling : null;
+            this.timeNowEl = document.getElementById("uiTimeNow");
+            this.timeTotalEl = document.getElementById("uiTimeTotal");
+            this.fsBtn = document.getElementById("fs-toggle");
+            this.bindCanvasClickToggle()
         }
 
-        drawTimer(ctx, elapsed, journeyDuration) {
-            ctx.fillStyle = '#FFF';
-            ctx.font = '16px monospace';
-            const secs = Math.floor(elapsed / 1000);
-            const mins = Math.floor(secs / 60);
-            const rsec = secs % 60;
-            const totSec = Math.floor(journeyDuration / 1000);
-            const totMin = Math.floor(totSec / 60);
-            const rTotSec = totSec % 60;
-            const fmt = n => n < 10 ? '0' + n : '' + n;
-            ctx.fillText(`${fmt(mins)}:${fmt(rsec)} / ${fmt(totMin)}:${fmt(rTotSec)}`, 10, 25);
-        }
-
-        drawSpeed(ctx, speed) {
-            ctx.fillStyle = '#FFF';
-            ctx.font = '16px monospace';
-            ctx.fillText(`Speed: ${speed.toFixed(2)}`, 10, 45);
-        }
-    }
-
-    class Moon {
-        constructor(game) {
-            this.game = game;
-            this.moonFrameIndex = 0;
-            this.moonFrameCounter = 0;
-            this.moonAngle = this.game.config.moonAngle;
-        }
-
-        drawMoonOverlay(ctx, img, cx, cy, moonSize, frameIndex, totalFrames, alpha) {
-            if (!img.complete) return;
-            ctx.save();
-
-            // Recorte circular de la luna
-            ctx.beginPath();
-            ctx.arc(cx, cy, moonSize / 2, 0, Math.PI * 2);
-            ctx.clip();
-
-            ctx.globalAlpha = alpha;
-
-            // Calcular escala del sprite rectangular a la altura de la luna
-            const scale = moonSize / img.naturalHeight;
-            const overlayW = img.naturalWidth * scale;
-            const overlayH = moonSize;
-
-            // Centrar sobre la luna
-            const xOrigin = cx - overlayW / 2;
-            const yOrigin = cy - overlayH / 2;
-
-            // Offset animado
-            const baseShift = (Math.floor(frameIndex) / totalFrames) * overlayW;
-            const totalOffset = baseShift % overlayW;
-
-            // Dibujar dos repeticiones para wrap
-            ctx.drawImage(img, xOrigin + totalOffset, yOrigin, overlayW, overlayH);
-            ctx.drawImage(img, xOrigin + totalOffset - overlayW, yOrigin, overlayW, overlayH);
-
-            ctx.restore();
-        }
-
-        draw(ctx, behind = false) {
-            const orbit = this.game.boxSize * 0.8;
-            const moonSz = this.game.boxSize * 0.15;
-            const xOff = Math.sin(this.moonAngle) * orbit;
-            const yOff = Math.cos(this.moonAngle) * orbit * 0.3;
-            const depth = Math.cos(this.moonAngle);
-            const moonX = this.game.earth.cx + xOff;
-            const moonY = this.game.earth.cy + yOff;
-            const isBehind = depth < 0;
-
-            if (behind === isBehind) {
-                const alpha = 1.0;
-                this.drawMoonOverlay(
-                    ctx,
-                    this.game.assetManager.getMoonOverlay(),
-                    moonX,
-                    moonY,
-                    moonSz,
-                    this.moonFrameIndex,
-                    this.game.config.totalMoonFrames,
-                    alpha
-                );
-
-                const moonArgs = [ctx, moonX, moonY, moonSz / 2];
-
-                applyLighting(...moonArgs, {
-                    offsetX: 0,
-                    offsetY: 0,
-                    innerColor: behind ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)',
-                    outerColor: 'rgba(80,80,80,0.1)'
+        initControls() {
+            this.btn.addEventListener("click", () => {
+                this.game.play = !this.game.play;
+                this.game.play ? this.game.audio.play() : this.game.audio.pause();
+                this.updatePlayButton()
+            });
+            this.volume.addEventListener("input", e => {
+                const v = parseFloat(e.target.value);
+                this.game.audio.setVolume(v);
+                this.renderVolumeIcon()
+            });
+            if (this.volumeBtn) {
+                this.volumeBtn.classList.add("cursor-pointer", "hover:bg-white/20", "transition");
+                this.volumeBtn.addEventListener("click", () => {
+                    this.game.audio.toggleMute();
+                    if (this.game.audio.muted) this.volume.value = "0"; else this.volume.value = String(this.game.audio.volume);
+                    this.renderVolumeIcon()
+                })
+            }
+            if (this.timeSlider) {
+                this.timeSlider.min = 0;
+                this.timeSlider.max = CONFIG.journeyDuration;
+                this.timeSlider.step = .01;
+                this.timeSlider.value = 0;
+                const onScrub = sec => {
+                    this.game.audio.seekTo(sec);
+                    this.game.syncToElapsed()
+                };
+                this.timeSlider.addEventListener("input", e => onScrub(e.target.value));
+                this.timeSlider.addEventListener("change", e => onScrub(e.target.value))
+            }
+            if (this.fsBtn) {
+                this.fsBtn.classList.add("cursor-pointer");
+                this.fsBtn.addEventListener("click", async () => {
+                    if (!document.fullscreenElement) {
+                        const el = document.documentElement;
+                        if (el.requestFullscreen) await el.requestFullscreen()
+                    } else {
+                        if (document.exitFullscreen) await document.exitFullscreen()
+                    }
+                    this.updateFSButton()
                 });
-
-                applySpecularHighlight(...moonArgs, {
-                    offsetX: -0.2,
-                    offsetY: 0.2,
-                    sizeFactor: 0.8,
-                    color: behind ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.1)'
-                });
+                document.addEventListener("fullscreenchange", () => this.updateFSButton());
+                this.updateFSButton()
             }
+            this.game.audio.addEventListener("loadedmetadata", () => this.game.syncJourneySecondsFromAudio());
+            this.updatePlayButton();
+            this.renderVolumeIcon();
+            this.setTimeLabel(0, CONFIG.journeyDuration)
         }
 
-        update() {
-            this.moonFrameCounter++;
-            if (this.moonFrameCounter >= this.game.config.framesPerMoonUpdate) {
-                this.moonFrameCounter = 0;
-                this.moonFrameIndex = (this.moonFrameIndex + 1) % this.game.config.totalMoonFrames;
-            }
-
-            this.moonAngle += 0.001;
-        }
-    }
-
-    class Clouds {
-        constructor(game) {
-            this.game = game;
-            this.cloudFrameCounter = 0;
-            this.cloudFrameIndex = 0;
+        updateFSButton() {
+            if (!this.fsBtn) return;
+            if (document.fullscreenElement) this.fsBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 5H5v4h2V7h2V5zm10 0h-4v2h2v2h2V5zM5 15H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>'; else this.fsBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3H3v4h2V5h2V3zm14 0h-4v2h2v2h2V3zM5 17H3v4h4v-2H5v-2zm16 0h-2v2h-2v2h4v-4z"/></svg>'
         }
 
-        drawCloudLayer(ctx, img, alpha, invert, initShift = 0) {
-            if (!img.complete) return;
-            ctx.save();
-
-            // Recorte circular alrededor de la Tierra
-            ctx.beginPath();
-            ctx.arc(this.game.earth.cx, this.game.earth.cy, this.game.boxSize / 1.98, 0, Math.PI * 2);
-            ctx.clip();
-
-            // Opacidad
-            ctx.globalAlpha = alpha;
-
-            const tilt = (this.game.config.earthTiltDeg || 0) * Math.PI / 180;
-            ctx.translate(this.game.earth.cx, this.game.earth.cy);
-            ctx.rotate(tilt);
-
-            const scale = this.game.boxSize / img.naturalHeight;
-            const overlayW = img.naturalWidth * scale;
-            const overlayH = this.game.boxSize;
-
-            const xOrigin = -overlayW / 2;
-            const yOrigin = -overlayH / 2;
-
-            const baseShift = (this.cloudFrameIndex / CONFIG.totalCloudFrames) * overlayW;
-
-            let totalOffset = (baseShift + initShift) % overlayW;
-            if (totalOffset < 0) totalOffset += overlayW;
-
-            const signedOffset = invert ? -totalOffset : +totalOffset;
-
-            const x1 = xOrigin + signedOffset;
-            const x2 = invert ? x1 + overlayW : x1 - overlayW;
-
-            // Dibujar ambas repeticiones
-            ctx.drawImage(img, x1, yOrigin, overlayW, overlayH);
-            ctx.drawImage(img, x2, yOrigin, overlayW, overlayH);
-
-            ctx.restore();
+        updatePlayButton() {
+            if (!this.btn) return;
+            if (this.game.play) this.btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/></svg>'; else this.btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"/></svg>'
         }
 
-        draw(ctx, behind = false) {
-            const cloudsInvertedImg = this.game.assetManager.getCloudOverlayInverted()
-            const cloudsImg = this.game.assetManager.getCloudOverlay()
-
-            if (cloudsInvertedImg.complete && behind) {
-                this.drawCloudLayer(ctx, cloudsInvertedImg, 0.7, true);
-            }
-
-            if (cloudsImg.complete && !behind) {
-                this.drawCloudLayer(ctx, cloudsImg, 0.8, false);
-            }
+        renderVolumeIcon() {
+            if (!this.volumeBtn) return;
+            const muted = this.game.audio.muted || this.game.audio.volume === 0;
+            const v = this.game.audio.volume;
+            if (muted) this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M19 8l-1.4-1.4L15.8 8.4 14.4 7l-1.4 1.4 1.8 1.8-1.8 1.8L14.4 13l1.4-1.4 1.8 1.8L19 12.9l-1.8-1.8L19 9.3z"/></svg>'; else if (v <= .4) this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M17 12c0-1.1-.9-2-2-2v4c1.1 0 2-.9 2-2z"/></svg>'; else this.volumeBtn.innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 7v2c1.7 0 3 1.3 3 3s-1.3 3-3 3v2c2.8 0 5-2.2 5-5s-2.2-5-5-5z"/></svg>'
         }
 
-        update() {
-            this.cloudFrameCounter++;
-            if (this.cloudFrameCounter >= CONFIG.framesPerCloudsUpdate) {
-                this.cloudFrameCounter = 0;
-                this.cloudFrameIndex = (this.cloudFrameIndex + 1) % CONFIG.totalCloudFrames;
-            }
+        setSliderValue(v) {
+            if (this.timeSlider) this.timeSlider.value = v
+        }
+
+        setSliderMax(v) {
+            if (this.timeSlider) this.timeSlider.max = v
+        }
+
+        setTimeLabel(elapsedSec, totalSec) {
+            const fmt = n => {
+                const s = Math.max(0, Math.floor(n || 0));
+                const m = Math.floor(s / 60);
+                const r = s % 60;
+                return `${m}:${r < 10 ? "0" + r : r}`
+            };
+            if (this.timeNowEl) this.timeNowEl.innerHTML = fmt(elapsedSec);
+            if (this.timeTotalEl) this.timeTotalEl.innerHTML = fmt(totalSec)
+        }
+
+        bindCanvasClickToggle() {
+            this.canvas.addEventListener("click", () => {
+                this.game.play = !this.game.play;
+                this.game.play ? this.game.audio.play() : this.game.audio.pause();
+                this.updatePlayButton()
+            })
         }
     }
 
     class SpaceJourneyGame {
         constructor() {
-            this.canvas = document.getElementById('viaje');
-            this.ctx = this.canvas.getContext('2d');
-            this.config = CONFIG
+            this.canvas = document.getElementById("viaje");
+            this.ctx = this.canvas.getContext("2d");
             this.play = false;
-
             this.assetManager = new AssetManager();
-            this.stars = new Stars(this);
-            this.sun = new Sun(this);
-            this.moon = new Moon(this);
+            this.camera = new Camera(this);
+            this.sun = new CelestialBody(this, "sun");
+            this.mercury = new CelestialBody(this, "mercury");
+            this.venus = new CelestialBody(this, "venus");
+            this.mars = new CelestialBody(this, "mars");
+            this.jupiter = new CelestialBody(this, "jupiter");
+            this.saturn = new CelestialBody(this, "saturn");
+            this.uranus = new CelestialBody(this, "uranus");
+            this.neptune = new CelestialBody(this, "neptune");
             this.earth = new Earth(this);
-            this.clouds = new Clouds(this);
             this.audio = new AudioPlayer(this);
             this.ui = new UI(this);
-
-            this.startTime = performance.now();
-            // Establecer una velocidad fija para las estrellas
-            this.shipSpeed = CONFIG.starSpeed;
-
-            // Indicador de visibilidad de la Tierra
-            this.earthVisible = false;
-
-            this.setupCanvas();
-            this.setupEvents();
-
-            this.animate();
-        }
-
-        setupCanvas() {
+            this.elapsed = 0;
+            this.bodyIndex = {};
+            this.starLayers = (CONFIG.starFields || []).map((cfg, i) => new StarFields(this, cfg, i));
+            autoExtendJourneySeconds();
+            this.indexBodies();
             this.resizeCanvas();
+            this.bindWindowEvents();
+            this.ui.initControls();
+            this.animate()
         }
 
-        setupEvents() {
-            window.addEventListener('resize', () => this.resizeCanvas());
+        indexBodies() {
+            this.bodyIndex["sun"] = this.sun;
+            this.bodyIndex["mercury"] = this.mercury;
+            this.bodyIndex["venus"] = this.venus;
+            this.bodyIndex["mars"] = this.mars;
+            this.bodyIndex["jupiter"] = this.jupiter;
+            this.bodyIndex["saturn"] = this.saturn;
+            this.bodyIndex["uranus"] = this.uranus;
+            this.bodyIndex["neptune"] = this.neptune;
+            this.bodyIndex["earth"] = this.earth;
+            this.bodyIndex["moon"] = this.earth.moon
+        }
 
-            const btn = document.getElementById('music-toggle');
-            const slider = document.getElementById('music-volume');
+        bindWindowEvents() {
+            window.addEventListener("resize", () => this.resizeCanvas())
+        }
 
-            btn.addEventListener('click', () => {
-                this.play = !this.play;
-                this.audio.toggle();
-                btn.textContent = this.audio.isPlaying ? 'Pause' : 'Play';
-            });
-            slider.addEventListener('input', (e) => {
-                this.audio.setVolume(parseFloat(e.target.value));
-            });
+        syncJourneySecondsFromAudio() {
+            const dur = this.audio.getDuration();
+            const maxFromConfig = maxSecondInConfig(CONFIG);
+            CONFIG.journeySeconds = Math.max(CONFIG.journeySeconds || 0, maxFromConfig, dur);
+            this.ui.setSliderMax(CONFIG.journeyDuration)
+        }
+
+        syncToElapsed() {
+            this.sun.syncToElapsed?.();
+            this.mercury.syncToElapsed?.();
+            this.venus.syncToElapsed?.();
+            this.mars.syncToElapsed?.();
+            this.jupiter.syncToElapsed?.();
+            this.saturn.syncToElapsed?.();
+            this.uranus.syncToElapsed?.();
+            this.neptune.syncToElapsed?.();
+            this.earth.syncToElapsed?.();
+            this.starLayers.forEach(l => l.syncToElapsed());
+            this.camera.update()
         }
 
         resizeCanvas() {
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
-            this.stars.onResize();
-        }
-
-        updateElapsedTime() {
-            const now = performance.now();
-            this.elapsed = now - this.startTime;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const w = Math.floor(window.innerWidth);
+            const h = Math.floor(window.innerHeight);
+            this.canvas.style.width = w + "px";
+            this.canvas.style.height = h + "px";
+            this.canvas.width = Math.round(w * dpr);
+            this.canvas.height = Math.round(h * dpr);
+            this.camera.onResize()
         }
 
         drawBackground(ctx) {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
         }
 
         update() {
-            if (!this.play) return;
-            this.updateElapsedTime();
-            // Actualizar el Sol
             this.sun.update();
-            // Actualizar animaciones
-            this.stars.update();
+            this.mercury.update();
+            this.venus.update();
+            this.mars.update();
+            this.jupiter.update();
+            this.saturn.update();
+            this.uranus.update();
+            this.neptune.update();
             this.earth.update();
-            this.moon.update();
-            this.clouds.update();
+            this.earth.moon.update();
+            this.starLayers.forEach(l => l.update());
+            this.camera.update()
         }
 
         draw() {
-            if (!this.play) return;
-
             this.drawBackground(this.ctx);
-            // Dibujar estrellas al frente
-            this.stars.draw(this.ctx);
-            // Dibujar Sol si está visible
+            this.starLayers.filter(l => l.cfg.behindBodies !== false).forEach(l => l.draw(this.ctx));
+            if (this.earth.visible && this.earth.screen.r > 0) this.earth.drawChildren(this.ctx);
             this.sun.draw(this.ctx);
-            // Dibujar estrellas de fondo
-            this.stars.draw(this.ctx, true);
-
-            // Dibujar la Tierra, nubes y Luna si corresponde
-            if (this.earthVisible && this.boxSize > 0) {
-                this.moon.draw(this.ctx, true);
-                this.clouds.draw(this.ctx, true);
-                this.earth.draw(this.ctx);
-                this.clouds.draw(this.ctx, false);
-                this.moon.draw(this.ctx, false);
-            }
-
-            // Cronómetro
-            this.ui.drawTimer(this.ctx, this.elapsed, CONFIG.journeyDuration);
-            // No se muestra la velocidad porque la nave no tiene velocidad propia
+            this.mercury.draw(this.ctx);
+            this.venus.draw(this.ctx);
+            this.mars.draw(this.ctx);
+            this.jupiter.draw(this.ctx);
+            this.saturn.draw(this.ctx);
+            this.uranus.draw(this.ctx);
+            this.neptune.draw(this.ctx);
+            this.starLayers.filter(l => l.cfg.behindBodies === false).forEach(l => l.draw(this.ctx))
         }
 
         animate() {
-            this.update();
+            this.elapsed = this.audio.getCurrentTime();
+            if (this.play) this.update(); else this.syncToElapsed();
+            this.ui.setSliderValue(this.elapsed);
+            this.ui.setTimeLabel(this.elapsed, CONFIG.journeyDuration);
             this.draw();
-            requestAnimationFrame(() => this.animate());
+            requestAnimationFrame(() => this.animate())
         }
     }
 
-    // Inicializar el juego cuando se carga la página
-    document.addEventListener('DOMContentLoaded', () => {
-        new SpaceJourneyGame();
+    document.addEventListener("DOMContentLoaded", () => {
+        new SpaceJourneyGame()
     });
-
 </script>
 </body>
 </html>
